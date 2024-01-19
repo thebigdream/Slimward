@@ -1,6 +1,11 @@
-//Ths file contains commonly used functions.
+// This file contains commonly used functions.
 
-// Basic message cleansing
+// Imports
+import { setTimeout } from "timers/promises"
+import { channel } from "./index.mjs"
+
+// Exports
+// Message cleansing
 export function sanitise(str) {
     try {
         // Remove opening space, if present
@@ -53,4 +58,13 @@ export function sanitise(str) {
 
     } catch { }
     return str
+}
+
+// Discord reply function
+export async function reply(message, response) {
+    try { 
+            message.channel.sendTyping().catch(error => {console.error(`Error typing message: ${error}`)})
+            await setTimeout(10000)
+            message.reply(response).catch(error => {console.error(`Error sending message: ${error}`)})
+    } catch { console.log('Error: Could not reply to message.') }
 }
