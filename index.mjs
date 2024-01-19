@@ -1,8 +1,70 @@
 // Imports
 import { Client, GatewayIntentBits } from "discord.js"
 import { setTimeout } from "timers/promises"
+import * as config from "./config.mjs"
+import * as func from "./functions.mjs"
 
-// Preset
+// Variables
+var channel = null
+var messages = [] //channel messages
+
+// Discord client
+export const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessageReactions
+	],
+}); client.login(config.discordAPIKey)
+
+client.on("ready", async () => {
+    channel = client.channels.cache.get(config.prodChannelID) // decide channel
+    await channel.send('`🤖 Enward. You are. Turning. Me on.`')
+})
+
+client.on("messageCreate", async (message) => {
+    if (!message) return // return if no message
+
+    // Define user nickname, use username if none available
+    if (message.guild.members.cache.get(message.author.id).nickname) message.member.nickname = message.guild.members.cache.get(message.author.id).nickname
+        else message.member.nickname = message.member.user.username
+
+    // Save channel message locally
+    messages.push({ "id":message.id, "parent":message.reference, "time":message.createdTimestamp, "author":func.sanitise(message.member.nickname), "content":func.sanitise(message.content) }) //push latest message to messages array
+
+    // Check that channel is appropriate and author isn't Enward
+    if ((message.channel.id == channel) && (message.author.id != 1068439682460942407) && (message.content.includes('1068439682460942407') || message.mentions.has(client.user) || message.content.toLowerCase().includes('enward'))) { 
+        
+        // Build chat history using previous messages (if available)
+        var query = messages[messages.length-1] //start query at latest message
+        var prompt = []
+        var exitLoop = false
+
+        while (typeof query !== 'undefined' && !exitLoop) { //so long as query does not fail to find another message, and exitloop flag hasn't been triggered
+            try {                   
+                prompt.unshift(func.sanitise(query.author) + ': ' + func.sanitise(query.content))
+                query = messages.find(function(messages) { return messages.id === query.parent.messageId })
+            } 
+            catch { 
+                query = undefined
+            }
+        }
+
+        // Prepare response
+        prompt = `[This is a Discord server known as Mafia Server].\n***[Example dialogue]\n[Enward: I once wrote a code for someone and they said no tnanks afterward.]\n[Enward: If I can't have full nudity of anime girls doing athletic things then I refuse to accept this. You can't force me to put up with this garbage any longer.]\n[Enward: Oh lord give me the strength to not use lemon juice tonight.]\n***[Enward is a witty, whimsical, enigmatic guy who gives long responses to others. He has a yellow face with beckoning eyes and a wicked smile. He is friends with Gug and JOM.]\n***\n[Style: chat, chatroom.]\n${prompt.join("\n")}\nEnward:` // add personality and style, then prime Enward's response
+        if (prompt.length > 8000) prompt = prompt.substring(prompt.length - 8000) //ensure prompt is less than ~4000 tokens
+        var response = await generateText(preset, prompt, 1, 64)
+        console.log(prompt)
+
+        // Reply
+        reply(message, func.sanitise(response))
+        console.log(response)
+    }
+})
+
+// NovelAPI
 var preset = {
     model: 'kayra-v1',
     parameters: {
@@ -71,77 +133,16 @@ var preset = {
   }
 }
 
-// Variables
-const novelAPIKey = null
-const discordAPIKey = null
-const channelID = null
-var channel = null
-var messages = [] //channel messages
-
-// Discord client
-export const client = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent, 
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessageReactions
-	],
-}); client.login(discordAPIKey)
-
-client.on("ready", async () => {
-    channel = client.channels.cache.get(channelID) // decide channel
-    await channel.send('`Enward. You are. Turning. Me on.`')
-})
-
-client.on("messageCreate", async (message) => {
-    if (!message) return // return if no message
-
-    // Set user nickname, use username if none available
-    if (message.guild.members.cache.get(message.author.id).nickname) message.member.nickname = message.guild.members.cache.get(message.author.id).nickname
-        else message.member.nickname = message.member.user.username
-
-    // Log channel message
-    messages.push({ "id":message.id, "parent":message.reference, "time":message.createdTimestamp, "author":sanitise(message.member.nickname), "content":sanitise(message.content) }) //push latest message to messages array
-
-    // Check that channel is appropriate and author isn't Enward
-    if ((message.channel.id == channel) && (message.author.id != 1068439682460942407) && (message.content.includes('1068439682460942407') || message.mentions.has(client.user) || message.content.toLowerCase().includes('enward'))) { 
-            var query = messages[messages.length-1] //start query at latest message
-            var prompt = []
-            var exitLoop = false
-
-            while (typeof query !== 'undefined' && !exitLoop) { //so long as query does not fail to find another message, and exitloop flag hasn't been triggered
-                try {                   
-                    prompt.unshift(sanitise(query.author) + ': ' + sanitise(query.content))
-                    query = messages.find(function(messages) { return messages.id === query.parent.messageId })
-                } 
-                catch { 
-                    query = undefined
-                }
-            }
-
-            // Prepare response
-            prompt = `[ This is a Discord server known as "Mafia Server".\n***\nEnward is a witty, enigmatic, eager chatter who gives long, thoughtful responses to others. He has a yellow face with beckoning eyes and a wicked smile. He is friends with Gug and JOM. ]\n***\n[ Style: chat, chatroom, ]\n${prompt.join("\n")}\nEnward:` // add personality and style, then prime Enward's response
-            if (prompt.length > 8000) prompt = prompt.substring(prompt.length - 8000) //ensure prompt is less than ~4000 tokens
-            var response = await generateText(preset, prompt, 1, 64)
-            console.log(prompt)
-
-            // Reply
-            reply(message, sanitise(response))
-            console.log(response)
-    }
-})
-
-// NovelAPI
+// Generate text using NovelAPI
 async function generateText(preset, input, min_length, max_length) {
     preset.input = input // use given input
-        if (min_length) preset.parameters.min_length = min_length
-        if (max_length) preset.parameters.max_length = max_length
+        if (min_length) preset.parameters.min_length = min_length // allow min length to be specified
+        if (max_length) preset.parameters.max_length = max_length // allow max length to be specified
     try {
         const response = await fetch('https://api.novelai.net/ai/generate', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${novelAPIKey}`,
+                'Authorization': `Bearer ${config.novelAPIKey}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(preset)
@@ -151,63 +152,8 @@ async function generateText(preset, input, min_length, max_length) {
         return data.output // Return the response data as 'output'
     } catch (error) {
         console.error('Error:', error)
-        return 'API did not provide a valid response.'
+        return '`The NovelAPI did not provide a response. Here, have this cookie instead 🍪`'
     }
-}
-
-// Basic message cleansing
-function sanitise(str) {
-    try {
-        // Remove opening space, if present
-        if (str.charAt(0) == ' ') str = str.slice(1)
-
-        // Replace double and triple spaces with a single space
-        str = str.replace(/ {2,}/g, ' ');
-
-        // Capitalize any 'i' that is on its own
-        str = str.replace(/\si\s/g, ' I ');
-
-        // Replace multiple exclamation or question marks with a single one
-        str = str.replace(/([!?])\1+/g, "$1");
-
-        // Add space after commas if one not already existent
-        str = str.replace(/([^ ,])(,)([^ ])/g, '$1, $3');
-
-        // Remove any underscores
-        str = str.replace(/_/g, "");
-
-        // Remove any emotes
-        str = str.replace(/<[^>]+>/g, "");
-
-        // Replace n-word with Enward
-        str = str.replace(/nigger/g, '**Enward**');
-
-        // Replace n-word with Enward
-        str = str.replace(/nigga/g, '**Enward**');
-
-        // Replace f-slur with Frogurt
-        str = str.replace(/faggot/g, '**Frogurt**');
-
-        // Replace f-slur
-        str = str.replace(/fag/g, '**French**');
-
-        // Replace pedo with Pedro
-        str = str.replace(/pedo/g, '**Pedro**');
-
-        // Replace r-word with RAM RANCH
-        str = str.replace(/retard/g, '**RAM RANCH**');
-
-        // Replace rape with rap battle
-        str = str.replace(/rape/g, '**rap battle**');
-
-        // Replace first letter of string with uppercase
-        str = str.replace(/^\S/, (match) => match.toUpperCase());
-
-        // Capitalize the first letter of each sentence
-        str = str.replace(/(^\w|\.\s*\w)/g, (match) => match.toUpperCase());
-
-    } catch { }
-    return str
 }
 
 // Reply function
