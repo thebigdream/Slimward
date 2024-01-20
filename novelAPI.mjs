@@ -1,4 +1,4 @@
-// This file contains functions and variables relating to the NovelAPI.
+// This file contains functions and variables relating to the NovelAPI
 
 // Imports
 import * as config from "./config.mjs"
@@ -15,7 +15,7 @@ export const preset = {
         "repetition_penalty_presence": 0,
         "repetition_penalty_range": 8000,
         "repetition_penalty_slope": 0.09,
-        "temperature": 1.1,
+        "temperature": 1,
         "top_k": 100,
         "top_p": 5,
         "tail_free_sampling": 1,

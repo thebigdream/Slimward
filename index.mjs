@@ -1,17 +1,18 @@
-// This is the index file containing the essential 'loop' of Slimward.
-// It listens for valid Discord messages and generates replies.
+// This is the index file containing the essential 'loop' of Slimward
+// It listens for valid Discord messages and generates replies
 
 // Imports
 import { Client, GatewayIntentBits } from "discord.js"
 import * as config from "./config.mjs"
 import * as func from "./functions.mjs"
 import * as novelAPI from "./novelAPI.mjs"
+import random from 'random'
 
 // Variables
 export var channel = null
-var messages = [] // Channel messages are stored locally to prevent fuckery with the Discord API.
+var messages = [] // Channel messages are stored locally to prevent fuckery with the Discord API
 
-// Discord client
+// Initialise Discord client
 export const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
@@ -27,15 +28,15 @@ client.on("ready", async () => {
     await channel.send('`Enward. You are. Turning. Me on.`')
 })
 
+// Send a random message occasionally
+setInterval(async() => { if (random.int(0,100) == 0) await channel.send(await novelAPI.generateText(novelAPI.preset, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64))}, 6000)
+
+// Listen for messages and reply if valid
 client.on("messageCreate", async (message) => {
     if (!message) return
 
-    // Define user nickname, use username if none available
-    if (message.guild.members.cache.get(message.author.id).nickname) message.member.nickname = message.guild.members.cache.get(message.author.id).nickname
-        else message.member.nickname = message.member.user.username
-
     // Save message locally
-    messages.push({ "id":message.id, "parent":message.reference, "time":message.createdTimestamp, "author":func.sanitise(message.member.nickname), "content":func.sanitise(message.content) }) //push latest message to messages array
+    messages.push({"id":message.id, "parent":message.reference, "time":message.createdTimestamp, "author":func.getName(message), "content":func.sanitise(message.content)}) //push latest message to messages array
 
     // Check that channel is appropriate and author isn't Enward
     if ((message.channel.id == channel) && (message.author.id != 1068439682460942407) && (message.content.includes('1068439682460942407') || message.mentions.has(client.user) || message.content.toLowerCase().includes('enward'))) { 
@@ -50,8 +51,7 @@ client.on("messageCreate", async (message) => {
             try {                   
                 prompt.unshift(func.sanitise(query.author) + ': ' + func.sanitise(query.content))
                 query = messages.find(function(messages) { return messages.id === query.parent.messageId })
-            } 
-            catch { query = undefined }
+            } catch { query = undefined }
         }
 
         // Prepare response
