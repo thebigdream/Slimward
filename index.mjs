@@ -1,15 +1,17 @@
 // This is the index file containing the essential 'loop' of Slimward
-// It listens for valid Discord messages and generates replies
+// It listens for valid Discord messages and commands, and generates replies
 
 // Imports
-import { Client, GatewayIntentBits } from "discord.js"
+import { Client, Collection, Events, GatewayIntentBits,  SlashCommandBuilder } from "discord.js"
 import * as config from "./config.mjs"
 import * as func from "./functions.mjs"
 import * as novelAPI from "./novelAPI.mjs"
 import random from 'random'
 
-// Variables
+// Exports
 export var channel = null
+
+// Variables
 var messages = [] // Channel messages are stored locally to prevent fuckery with the Discord API
 
 // Initialise Discord client
@@ -19,13 +21,57 @@ export const client = new Client({
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent, 
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessageReactions
 	],
 }); client.login(config.discordAPIKey)
 
+const commands = [
+    {
+        name: 'generate',
+        description: 'Continues generating text from your prompt.',
+        type: 1,
+        options: [ {
+            name: "prompt",
+            description: "Initial prompt",
+            type: 3,
+            required: true,
+        } ]
+    },
+    {
+        name: 'ping',
+        description: 'Replies with Pong!',
+        type: 1,
+        options: [ {
+            name: "peeng",
+            description: "option 1",
+            type: 3,
+            required: true,
+        } ]
+    },
+]
+
+// Establish connection to channel
 client.on("ready", async () => {
     channel = client.channels.cache.get(config.channelID) // Decide channel
     await channel.send('`Enward. You are. Turning. Me on.`')
+    await client.application.commands.set(commands)
+})
+
+// Respond to commands
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isCommand()) return
+
+    // Store interaction name and user-defined options
+    const { commandName, options } = interaction
+
+    try {
+        if (commandName === 'ping') {
+            await interaction.reply(`You entered "${options.getString('peeng')}"`)
+        }
+        if (commandName === 'generate') {
+            var response = await novelAPI.generateText(novelAPI.preset, func.sanitise(options.getString('prompt')), 1, 64)
+            await interaction.reply(func.sanitise(options.getString('prompt')) + response)
+        }
+    } catch { }
 })
 
 // Send a random message occasionally
@@ -57,7 +103,6 @@ client.on("messageCreate", async (message) => {
 
             // Prepare response
             prompt = `[This is a Discord server known as Mafia Server.]\n----\n[Enward is a witty, whimsical, enigmatic guy who gives long responses to others. He has a yellow face with beckoning eyes and a wicked smile. He is friends with Gug and JOM.]\n----\n[Style: chat, chatroom.]\n${prompt.join("\n")}\nEnward:` // Add personality and style, then prime Enward's response
-            if (prompt.length > 8000) prompt = prompt.substring(prompt.length - 8000) // Ensure prompt is less than ~4000 tokens
             var response = await novelAPI.generateText(novelAPI.preset, prompt, 1, 64)
             console.log(prompt)
 

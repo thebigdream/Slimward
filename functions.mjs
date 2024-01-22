@@ -28,19 +28,19 @@ export function sanitise(str) {
         if (str.charAt(0) == ' ') str = str.slice(1)
 
         // Replace double and triple spaces with a single space
-        str = str.replace(/ {2,}/g, ' ');
+        str = str.replace(/ {2,}/g, ' ')
 
         // Capitalize any 'i' that is on its own
-        str = str.replace(/\si\s/g, ' I ');
+        str = str.replace(/\si\s/g, ' I ')
 
         // Replace multiple exclamation or question marks with a single one
-        str = str.replace(/([!?])\1+/g, "$1");
+        str = str.replace(/([!?])\1+/g, "$1")
 
         // Add space after commas if one not already existent
-        str = str.replace(/([^ ,])(,)([^ ])/g, '$1, $3');
+        str = str.replace(/([^ ,])(,)([^ ])/g, '$1, $3')
 
         // Remove underscores
-        str = str.replace(/_/g, "");
+        str = str.replace(/_/g, "")
 
         // Remove emotes
         str = str.replace(/<[^>]+>/g, "")

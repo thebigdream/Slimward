@@ -33,10 +33,13 @@ export const preset = {
             [530], // -
             [588], //."
             [625], //..
+            [803], //,"
             [821], //...
+            [877], //?"
             [1165], // '
             [1214], //:
             [1431], // [
+            [1538], //!"
             [2082], //....
             [2811], //.'
             [3662], //::
@@ -76,6 +79,7 @@ export async function generateText(preset, input, min_length, max_length) {
     preset.input = input // use given input
         if (min_length) preset.parameters.min_length = min_length // allow min length to be specified
         if (max_length) preset.parameters.max_length = max_length // allow max length to be specified
+        if (input.length > 8000) input = input.substring(prompt.length - 8000) // Ensure prompt is less than ~4000 tokens
     try {
         const response = await fetch('https://api.novelai.net/ai/generate', {
             method: 'POST',
