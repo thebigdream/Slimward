@@ -53,12 +53,9 @@ client.on('interactionCreate', async (interaction) => {
     const { commandName, options } = interaction
 
     try {
-        if (commandName === 'ping') {
-            await interaction.reply(`You entered "${options.getString('peeng')}"`)
-        }
         if (commandName === 'generate') {
             var prompt = func.sanitise(options.getString('prompt'))
-            var response = await novelAPI.generateText(novelAPI.preset, `He went to the store and bought himself a pair of pants. They were leather and quite elegant.\nMy stupid bitch mom ruins everything! I can't believe she threw away my favourite dress without asking me! My day is ruined.\nPresident Wilson was an American politician and academic who served as the 28th president of the United States from 1913 to 1921. A member of the Democratic Party, Wilson served as the president of Princeton University and as the governor of New Jersey before winning the 1912 presidential election.\nA song about smallpox: 🎶In days of old, a foe so bold, Smallpox came, its story told🎶.\n${prompt}`, 1, 64)
+            var response = func.sanitise(await novelAPI.generateText(novelAPI.preset, `He went to the store and bought himself a pair of pants. They were leather and quite elegant.\nMy stupid bitch mom ruins everything! I can't believe she threw away my favourite dress without asking me! My day is ruined.\nPresident Wilson was an American politician and academic who served as the 28th president of the United States from 1913 to 1921. A member of the Democratic Party, Wilson served as the president of Princeton University and as the governor of New Jersey before winning the 1912 presidential election.\nA song about smallpox: 🎶In days of old, a foe so bold, Smallpox came, its story told🎶.\n${prompt}`, 1, 64))
             await interaction.reply(prompt + response)
         }
     } catch { }
@@ -77,6 +74,9 @@ client.on("messageCreate", async (message) => {
 
         // Check that channel is appropriate and author isn't Enward
         if ((message.channel.id == channel) && (message.author.id != 1068439682460942407) && (message.content.includes('1068439682460942407') || message.mentions.has(client.user) || message.content.toLowerCase().includes('enward'))) { 
+            
+            // Low chance to end bot conversation
+            if (message.author.bot) if (int.random(0,10) === 0) return
             
             // Build chat history using previous messages (if available)
             var query = messages[messages.length-1] // Start query at latest message
