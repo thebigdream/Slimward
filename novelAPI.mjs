@@ -1,5 +1,3 @@
-// This file contains functions and variables relating to the NovelAPI
-
 // Imports
 import * as config from "./config.mjs"
 

@@ -1,13 +1,10 @@
-// This file contains commonly used functions
-
 // Imports
 import { setTimeout } from "timers/promises"
 import { channel } from "./index.mjs"
 
 // Exports
-
 // Get user's nickname, or failing that, their username
-export function getName(message) {
+export function getName(message) { 
     if (message.guild.members.cache.get(message.author.id).nickname) return sanitise(message.guild.members.cache.get(message.author.id).nickname)
     else return sanitise(message.member.user.username)
 }
