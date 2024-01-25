@@ -33,8 +33,8 @@ client.on('interactionCreate', async (interaction) => {
     try {
         if (commandName === 'generate') {
             var prompt = options.getString('prompt')
-            var response = func.sanitise(await novelAPI.generateText(novelAPI.preset, `He went to the store and bought himself a pair of pants. They were leather and quite elegant.\nMy stupid bitch mom ruins everything! I can't believe she threw away my favourite dress without asking me! My day is ruined.\nPresident Wilson was an American politician and academic who served as the 28th president of the United States from 1913 to 1921. A member of the Democratic Party, Wilson served as the president of Princeton University and as the governor of New Jersey before winning the 1912 presidential election.\nA song about smallpox: 🎶In days of old, a foe so bold, Smallpox came, its story told🎶.\n${prompt}`, 1, 64))
-            await interaction.reply(prompt + response)
+            var response = await novelAPI.generateText(novelAPI.preset, `He went to the store and bought himself a pair of pants. They were leather and quite elegant.\nMy stupid bitch mom ruins everything! I can't believe she threw away my favourite dress without asking me! My day is ruined.\nPresident Wilson was an American politician and academic who served as the 28th president of the United States from 1913 to 1921. A member of the Democratic Party, Wilson served as the president of Princeton University and as the governor of New Jersey before winning the 1912 presidential election.\nA song about smallpox: 🎶In days of old, a foe so bold, Smallpox came, its story told🎶.\n${prompt}`, 1, 64)
+            await interaction.reply(func.sanitise(prompt + response))
         }
     } catch { }
 })
