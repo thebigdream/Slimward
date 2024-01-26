@@ -2,11 +2,10 @@
 import * as config from "./config.mjs"
 
 // Exports
-export const preset = {
+export const chat = {
     model: 'kayra-v1',
     parameters: {
         "ban_brackets": true,
-        "bad_words_ids": [],
         "use_string": true,
         "repetition_penalty": 3.9,
         "repetition_penalty_frequency": 0,
@@ -75,7 +74,31 @@ export const preset = {
   }
 }
 
-export async function generateText(preset, input, min_length, max_length) {
+export const list = {
+    model: 'kayra-v1',
+    parameters: {
+        "ban_brackets": true,
+        "use_string": true,
+        "repetition_penalty": 3.9,
+        "repetition_penalty_frequency": 0,
+        "repetition_penalty_presence": 0,
+        "repetition_penalty_range": 8000,
+        "repetition_penalty_slope": 0.09,
+        "temperature": 1,
+        "top_k": 100,
+        "top_p": 5,
+        "tail_free_sampling": 1,
+        "generate_until_sentence": true,
+        "bad_words_ids": [
+            [85], // newline
+            [49230], //.
+        ],
+        "logit_bias_exp": [{"bias":0.2,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[11]]}, {"bias":-2.0,"ensure_sequence_finish":true,"generate_once":true,"sequence":[[30]]}]
+  }
+}
+
+
+export async function generate(preset, input, min_length, max_length) {
     preset.input = input // use given input
         if (min_length) preset.parameters.min_length = min_length // allow min length to be specified
         if (max_length) preset.parameters.max_length = max_length // allow max length to be specified

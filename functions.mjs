@@ -54,11 +54,15 @@ export function sanitise(str) {
         str = str.replace(/nazi/gi, '**nasi goreng**')
 
         // Replace first letter of string with uppercase
-        str = str.replace(/^\S/, (match) => match.toUpperCase());
+        str = str.replace(/^\S/, (match) => match.toUpperCase())
 
         // Capitalize the first letter of each sentence
-        str = str.replace(/(^\w|\.\s*\w)/g, (match) => match.toUpperCase());
+        str = str.replace(/(^\w|\.\s*\w)/g, (match) => match.toUpperCase())
 
+        // Make URLs lowercase
+        str = str.replace(/(?:^|\s)(https?:\/\/\S+)/gi, function(match) {
+            return match.toLowerCase();
+        })
     } catch { }
     return str
 }
