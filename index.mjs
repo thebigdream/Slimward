@@ -33,11 +33,11 @@ client.on('interactionCreate', async (interaction) => {
     try {
         if (commandName === 'generate') {
             await interaction.deferReply()
-            await interaction.editReply(await func.generateText(options.getString('prompt')))
+            await interaction.editReply(await func.generateText(func.sanitise(options.getString('prompt'))))
         }
         if (commandName === 'list') {
             await interaction.deferReply()
-            await interaction.editReply(await func.generateList(options.getString('prompt')))
+            await interaction.editReply(await func.generateList(func.sanitise(options.getString('prompt'))))
         }
     } catch { }
 })

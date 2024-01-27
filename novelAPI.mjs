@@ -35,21 +35,21 @@ export const list = {
         "repetition_penalty_presence": 0,
         "repetition_penalty_range": 8000,
         "repetition_penalty_slope": 0.09,
-        "temperature": 1.2,
+        "temperature": 1,
         "top_k": 100,
         "top_p": 5,
         "tail_free_sampling": 1,
         "generate_until_sentence": true,
+        "logit_bias_exp": [{"bias":0.4,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[11]]}, {"bias":-2.0,"ensure_sequence_finish":true,"generate_once":true,"sequence":[[30]]}],
         "bad_words_ids": [
             [85], // newline
             [49230], //.
         ],
-        "logit_bias_exp": [{"bias":0.2,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[11]]}, {"bias":-2.0,"ensure_sequence_finish":true,"generate_once":true,"sequence":[[30]]}]
-  }
+    }
 }
 
 // Array of tokens that should ALWAYS be banned because they degrade output quality.
-var defaultBannedTokens = [
+const defaultBannedTokens = [
     [23], //***
     [24], //----
     [25], // "
@@ -101,11 +101,12 @@ var defaultBannedTokens = [
 ]
 
 export async function generate(preset, input, min_length, max_length) {
-    preset.input = input // use given input
-        if (min_length) preset.parameters.min_length = min_length // allow min length to be specified
-        if (max_length) preset.parameters.max_length = max_length // allow max length to be specified
-        if (input.length > 8000) input = input.substring(prompt.length - 8000) // Ensure prompt is less than ~4000 tokens
-        preset.parameters.bad_words_ids.push(...defaultBannedTokens)
+    var tempPreset = JSON.parse(JSON.stringify(preset)) // Create a temporary version of the preset object so it can be manipulated.
+    tempPreset.input = input
+    tempPreset.parameters.bad_words_ids.push(...defaultBannedTokens)
+        if (min_length) tempPreset.parameters.min_length = min_length
+        if (max_length) tempPreset.parameters.max_length = max_length
+        if (input.length > 8000) input = input.substring(input.length - 8000) // Ensure prompt is less than ~4000 tokens.
     try {
         const response = await fetch('https://api.novelai.net/ai/generate', {
             method: 'POST',
@@ -113,7 +114,7 @@ export async function generate(preset, input, min_length, max_length) {
                 'Authorization': `Bearer ${config.novelAPIKey}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(preset)
+            body: JSON.stringify(tempPreset)
         })
         const data = await response.json()
         console.log('Output:', data); // Log the response data

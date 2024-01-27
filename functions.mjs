@@ -14,8 +14,8 @@ export async function generateList(prompt) {
 
     // Generate list
     while (!generated) {
-        var list = await novelAPI.generate(novelAPI.list, `fruit:grape,melon,rotten apple,watermelon,orange,manderin,banana,kiwi fruit,blueberry,jack fruit,strawberry,\nswords:rapier,dagger,sharp knife,ancient broadsword,claymore,greatsword,dirk,\ncountries:Venezuela,Brazil,Australia,United Kingdom,China,Yugoslavia,Japan,Mexico,Fiji,\nmagical artefacts:robe of sorcery,ring of teleportation,mysterious gloves of shimmering light,arthurian sword,cursed undead horse,mithril breastplace of ice,\n${prompt}:`, 48, 64)
-        if (list != undefined && list.includes(',') && !list.includes('.') && !list.includes('!') && !list.includes('?') && !list.includes('[') && !list.includes(']') && list.length > num) {
+        var list = await novelAPI.generate(novelAPI.list, `Fruit:grape,melon,rotten apple,watermelon,orange,manderin,mouldy banana,kiwi fruit,blueberry,jack fruit,strawberry,\nSwords:rapier,dagger (heirloom),sharp knife,ancient broadsword,claymore,greatsword,dirk,\ncountries:Venezuela,Brazil,Australia,United Kingdom,China,Yugoslavia,Japan,Mexico,Fiji,\nHow to get away with murder:bury the body well,bribe the cops,just don't murder anyone,blame someone else,escape to another country,construct a strong alibi,\nmagical artefacts:robe of sorcery,ring of teleportation,mysterious gloves of shimmering light,arthurian sword,cursed undead horse,mithril breastplace of ice,\n${prompt}:`, 32, 48)
+        if (list != undefined && list.includes(',') && !list.includes('!') && !list.includes('?') && list.length > num) {
             generated = true
         } else list = ""
     }
