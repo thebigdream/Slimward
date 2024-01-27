@@ -72,7 +72,7 @@ client.on("messageCreate", async (message) => {
             }
 
             // Prepare response
-            prompt = `[This is a Discord server known as Mafia Server.]\n----\n${cfg.personality}\n----\n[Style: chat, chatroom.]\n${prompt.join("\n")}\nEnward:` // Add personality and style, then prime Enward's response
+            prompt = `${cfg.context}\n----\n${cfg.personality}\n----\n[Style: chat, chatroom.]\n${prompt.join("\n")}\nEnward:` // Add personality and style, then prime Enward's response
             var response = await novelAPI.generate(novelAPI.chat, prompt, 1, 64)
             console.log(prompt)
 
