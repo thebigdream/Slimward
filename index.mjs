@@ -1,4 +1,4 @@
-// Imports
+/* IMPORTS */
 import { Client, Collection, Events, GatewayIntentBits,  SlashCommandBuilder } from "discord.js"
 import * as cfg from "./config.mjs"
 import * as func from "./functions.mjs"
@@ -6,8 +6,8 @@ import * as novelAPI from "./novelAPI.mjs"
 import * as cmd from "./commands.mjs"
 import random from 'random'
 
-// Exports
-export var channel = null
+/* EXPORTS */
+export var channel
 
 // Variables
 var messages = [] // Channel messages are stored locally to prevent fuckery with the Discord API
@@ -33,18 +33,18 @@ client.on('interactionCreate', async (interaction) => {
     try {
         if (commandName === 'generate') {
             await interaction.deferReply()
-            await interaction.editReply(await cmd.generateText(options.getString('prompt')))
+            await interaction.editReply(await func.generateText(options.getString('prompt')))
         }
         if (commandName === 'list') {
             await interaction.deferReply()
-            await interaction.editReply(await cmd.generateList(options.getString('prompt')))
+            await interaction.editReply(await func.generateList(options.getString('prompt')))
         }
     } catch { }
 })
 
 // Send a random message occasionally
 setInterval(async() => { if (random.int(0,100) === 0) {
-    try { await channel.send(await novelAPI.generateText(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64)) } catch { }}
+    try { await channel.send(await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64)) } catch { }}
 }, 10000)
 
 // Listen for messages and reply if valid
@@ -72,7 +72,7 @@ client.on("messageCreate", async (message) => {
             }
 
             // Prepare response
-            prompt = `[This is a Discord server known as Mafia Server.]\n----\n[Enward is a witty, whimsical, enigmatic guy who gives long responses to others. He has a yellow face with beckoning eyes and a wicked smile. He is friends with Gug and JOM.]\n----\n[Style: chat, chatroom.]\n${prompt.join("\n")}\nEnward:` // Add personality and style, then prime Enward's response
+            prompt = `[This is a Discord server known as Mafia Server.]\n----\n${cfg.personality}\n----\n[Style: chat, chatroom.]\n${prompt.join("\n")}\nEnward:` // Add personality and style, then prime Enward's response
             var response = await novelAPI.generate(novelAPI.chat, prompt, 1, 64)
             console.log(prompt)
 
