@@ -31,7 +31,7 @@ export async function generateList(prompt) {
 // Continues generating text after the user's prompt
 export async function generateText(prompt) {
     var response = await novelAPI.generate(novelAPI.chat, `He went to the store and bought himself a pair of pants. They were leather and quite elegant. Little did he know they were counterfeit.\nMy stupid bitch mom ruins everything! I can't believe she threw away my favourite dress without asking me! My day is ruined.\nPresident Wilson was an American politician and academic who served as the 28th president of the United States from 1913 to 1921. A member of the Democratic Party, Wilson served as the president of Princeton University and as the governor of New Jersey before winning the 1912 presidential election.\nA song about smallpox: 🎶In days of old, a foe so bold, Smallpox came, its story told🎶.\n${prompt}`, 1, 64)
-    return sanitise(prompt + response)
+    return sanitise(`${prompt} ${response}`)
 }
 
 // Get user's nickname, or failing that, their username
@@ -49,7 +49,7 @@ export async function reply(message, response) {
     } catch { console.log('Error: Could not reply to message.') }
 }
 
-// Cleanse message of common grammar mistakes, offensive language etc.
+// Cleanse string of common grammar mistakes, offensive language etc.
 export function sanitise(str) {
     try {
         // Remove opening space, if present
