@@ -40,7 +40,7 @@ export const list = {
         "top_p": 5,
         "tail_free_sampling": 1,
         "generate_until_sentence": true,
-        "logit_bias_exp": [{"bias":0.4,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[11]]}, {"bias":-2.0,"ensure_sequence_finish":true,"generate_once":true,"sequence":[[30]]}],
+        "logit_bias_exp": [{"bias":0.05,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[49231]]}, {"bias":-2.0,"ensure_sequence_finish":true,"generate_once":true,"sequence":[[30]]}],
         "bad_words_ids": [
             [85], // newline
             [49230], //.
@@ -61,11 +61,13 @@ const defaultBannedTokens = [
     [803], //,"
     [821], //...
     [877], //?"
-    [1165], // '
+    [900], //).
     [1214], //:
     [1431], // [
     [1538], //!"
+    [1821], // *
     [2082], //....
+    [2531], //**
     [2811], //.'
     [3662], //::
     [3939], //):
@@ -75,6 +77,7 @@ const defaultBannedTokens = [
     [7794], // ]
     [7975], // ![
     [8209], //!!!s
+    [8552], //,,
     [8958], //author
     [10601], //.[
     [10681], //][
@@ -82,6 +85,7 @@ const defaultBannedTokens = [
     [15614], //Author
     [20680], //._
     [20932], // ..
+    [22549], // **
     [32303], //]:
     [47214], //:(
     [49211, 7001], //tags
@@ -93,6 +97,7 @@ const defaultBannedTokens = [
     [49352], //]
     [49356], //[
     [49360], //;
+    [49399], //*
     [49405], //>
     [49438], //<
     [49534], //~
@@ -101,6 +106,7 @@ const defaultBannedTokens = [
 ]
 
 export async function generate(preset, input, min_length, max_length) {
+    console.log(input)
     var tempPreset = JSON.parse(JSON.stringify(preset)) // Create a temporary version of the preset object so it can be manipulated.
     tempPreset.input = input
     tempPreset.parameters.bad_words_ids.push(...defaultBannedTokens)

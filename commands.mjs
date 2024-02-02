@@ -8,8 +8,7 @@ export const commands = [
             name: "prompt",
             description: "Initial prompt",
             type: 3,
-            required: true,
-        } ]
+            required: true, } ]
     },
     {
         name: 'list',
@@ -19,7 +18,24 @@ export const commands = [
             name: "prompt",
             description: "What the list will be about.",
             type: 3,
+            required: true, } ]
+    },
+    {
+        name: 'combine',
+        description: 'Combine two objects together.',
+        type: 1,
+        options: [ 
+        {
+            name: "item1",
+            description: "Object.",
+            type: 3,
             required: true,
-        } ]
+        },
+        {
+            name: "item2",
+            description: "Object.",
+            type: 3,
+            required: true,
+        }]
     },
 ]

@@ -1,31 +1,33 @@
-// TO DO: add generateEmbed
 /* IMPORTS */
 import * as novelAPI from "./novelAPI.mjs"
+import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
 import { channel } from "./index.mjs"
 import random from 'random'
 
 /* EXPORTS */
+// Combine two concepts into one
+
 // Generate a list of comma-separated items
-export async function generateList(prompt) {
-    var list
-    var generated
-    var num = random.int(5,8)
+export async function generateList(prompt, num) {
+    let list
+    let generated
+    if (!num) num = random.int(3,7)
 
     // Generate list
     while (!generated) {
-        var list = await novelAPI.generate(novelAPI.list, `Fruit:grape,melon,rotten apple,watermelon,orange,manderin,mouldy banana,kiwi fruit,blueberry,jack fruit,strawberry,\nSwords:rapier,dagger (heirloom),sharp knife,ancient broadsword,claymore,greatsword,dirk,\ncountries:Venezuela,Brazil,Australia,United Kingdom,China,Yugoslavia,Japan,Mexico,Fiji,\nHow to get away with murder:bury the body well,bribe the cops,just don't murder anyone,blame someone else,escape to another country,construct a strong alibi,\nmagical artefacts:robe of sorcery,ring of teleportation,mysterious gloves of shimmering light,arthurian sword,cursed undead horse,mithril breastplace of ice,\n${prompt}:`, 32, 48)
-        if (list != undefined && list.includes(',') && !list.includes('!') && !list.includes('?') && list.length > num) {
+        list = await novelAPI.generate(novelAPI.list, prompt, 32, 48)
+        if (list != undefined && list.includes(',') && !list.includes('!') && !list.includes('?') && list.length > num + 1) {
             generated = true
         } else list = ""
     }
 
-    // Trim list
-    list = list.split(',').slice(0, num);
-    if (num == 1) list = list[0] //don't return as array if just one requested
-
-    // Return list
-    return sanitise(`**${prompt}**: ${list}`)
+    // Convert to array, remove last item, shuffle list, remove any additional items, return as string
+    list = list.split(', ')
+    //list.pop()
+    list = shuffle(list)
+    list = list.slice(0, num).toString()
+    return list
 }
 
 // Continues generating text after the user's prompt
@@ -47,6 +49,21 @@ export async function reply(message, response) {
             await setTimeout(10000)
             message.reply(response).catch(error => {console.error(`Error sending message: ${error}`)})
     } catch { console.log('Error: Could not reply to message.') }
+}
+
+// Shuffle items in an array
+export function shuffle(array) {
+    var count = array.length,
+        randomnumber,
+        temp
+    while( count ){
+        randomnumber = Math.random() * count-- | 0
+        temp = array[count]
+        array[count] = array[randomnumber]
+        array[randomnumber] = temp
+    }
+    console.log(array)
+    return array
 }
 
 // Cleanse string of common grammar mistakes, offensive language etc.
@@ -83,6 +100,7 @@ export function sanitise(str) {
         str = str.replace(/retard/gi, '**RAM RANCH**')
         str = str.replace(/rape/gi, '**rap battle**')
         str = str.replace(/nazi/gi, '**nasi goreng**')
+        str = str.replace(/tard/gi, '**toyota**')
 
         // Replace first letter of string with uppercase
         str = str.replace(/^\S/, (match) => match.toUpperCase())
