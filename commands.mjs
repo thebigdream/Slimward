@@ -1,6 +1,16 @@
 /* EXPORTS */
 export const commands = [
     {
+        name: '8ball',
+        description: 'Shake the magic 8ball',
+        type: 1,
+        options: [ {
+            name: "question",
+            description: "Your question for the magic 8ball.",
+            type: 3,
+            required: true, } ]
+    },
+    {
         name: 'generate',
         description: 'Generate text based off an initial prompt.',
         type: 1,

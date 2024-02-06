@@ -1,12 +1,30 @@
 /* IMPORTS */
 import * as novelAPI from "./novelAPI.mjs"
+import * as cfg from "./config.mjs"
 import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
 import { channel } from "./index.mjs"
 import random from 'random'
 
 /* EXPORTS */
-// Combine two concepts into one
+// Generate a Discord embed
+export async function generateEmbed(title, description, colour) {
+    if (title.length >= 256) title = title.substring(title.length - 256) //ensure title is less than ~256 char
+    if (description.length >= 2048) description = description.substring(description.length - 2048) //ensure desc is less than ~2048 char
+    try {
+        var embed = new EmbedBuilder()
+            .setColor(colour)
+            .setTitle(title)
+            .setDescription(description)
+        return embed
+    } catch {
+        var embed = new EmbedBuilder()
+            .setColor(cfg.colors.alert)
+            .setTitle('System')
+            .setDescription('There was an issue generating an embed message.')
+        return embed
+    }
+}
 
 // Generate a list of comma-separated items
 export async function generateList(prompt, num) {
@@ -22,18 +40,12 @@ export async function generateList(prompt, num) {
         } else list = ""
     }
 
-    // Convert to array, remove last item, shuffle list, remove any additional items, return as string
-    list = list.split(', ')
-    //list.pop()
+    // Convert to array, remove last item, shuffle list, remove any additional items
+    list = list.split(',')
+    list.pop()
     list = shuffle(list)
-    list = list.slice(0, num).toString()
+    list = list.slice(0, num)
     return list
-}
-
-// Continues generating text after the user's prompt
-export async function generateText(prompt) {
-    var response = await novelAPI.generate(novelAPI.chat, `He went to the store and bought himself a pair of pants. They were leather and quite elegant. Little did he know they were counterfeit.\nMy stupid bitch mom ruins everything! I can't believe she threw away my favourite dress without asking me! My day is ruined.\nPresident Wilson was an American politician and academic who served as the 28th president of the United States from 1913 to 1921. A member of the Democratic Party, Wilson served as the president of Princeton University and as the governor of New Jersey before winning the 1912 presidential election.\nA song about smallpox: 🎶In days of old, a foe so bold, Smallpox came, its story told🎶.\n${prompt}`, 1, 64)
-    return sanitise(`${prompt} ${response}`)
 }
 
 // Get user's nickname, or failing that, their username
@@ -62,7 +74,6 @@ export function shuffle(array) {
         array[count] = array[randomnumber]
         array[randomnumber] = temp
     }
-    console.log(array)
     return array
 }
 
@@ -87,8 +98,8 @@ export function sanitise(str) {
         // Remove underscores
         str = str.replace(/_/g, "")
 
-        // Remove emotes
-        str = str.replace(/<[^>]+>/g, "")
+        // Remove @s
+        str = str.replace(/<@.*?>\s*/g, '')
 
         // Censored words
         str = str.replace(/fag/gi, '**french**')
