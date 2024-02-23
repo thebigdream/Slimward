@@ -18,9 +18,15 @@ export const chat = {
         "top_p": 5,
         "tail_free_sampling": 1,
         "generate_until_sentence": true,
-        "logit_bias_exp": [{"bias":0.01,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[[49230, 49338, 49335]]]}, ],
+        "logit_bias_exp": 
+        [
+            { "bias":0.01,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[[49230, 49338, 49335]]] }, // Make it slightly more likely to add full stops, commas and exclamantion marks.
+            { "bias":-0.05,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[[85]]] }, // Make it slightly less likely to output new lines, lengthening average output.
+        ],
         "stop_sequences": [[85]],
-        "bad_words_ids": []
+        "bad_words_ids": [],
+        "cfg_scale": 1.2,
+        "cfg_uc":`<|endoftext|>[ Author: Tara Gilesbie; Title: Five Time a Thing Happened and One Time It Didn't; Tags: self-indulgent nonsense, teenage fanfic; Genre: plot what plot ][ Style: bad writing, stupid, illogical, bad grammar ] Asdfghjklöä! im`
   }
 }
 
@@ -63,7 +69,7 @@ const defaultBannedTokens = [
     [877], //?"
     [900], //).
     [1165], // '
-    //[1214], //:
+    [1214], //:
     [1139], // |
     [1431], // [
     [1538], //!"
@@ -73,6 +79,7 @@ const defaultBannedTokens = [
     [3662], //::
     [3939], //):
     [4035], // ...
+    [4080], //---
     [4461], //||
     [5473], //],
     [7595], // `
@@ -84,9 +91,12 @@ const defaultBannedTokens = [
     [10414], //."
     [10601], //.[
     [10681], //][
+    [11246], //.}
     [15033], //.]
     [15614], //Author
+    [16889], //-|
     [20680], //._
+    [20866], //---|
     [20932], // ..
     [21099], //...|
     [22103], //.|
@@ -99,6 +109,8 @@ const defaultBannedTokens = [
     [49287], //:
     [49302], //=
     [49313], //_
+    [49332], //}
+    [49333], //{
     [49352], //]
     [49356], //[
     [49360], //;

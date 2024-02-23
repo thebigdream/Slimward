@@ -3,7 +3,7 @@ import * as novelAPI from "./novelAPI.mjs"
 import * as cfg from "./config.mjs"
 import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
-import { channel } from "./index.mjs"
+import { channel, ids } from "./index.mjs"
 import random from 'random'
 
 /* EXPORTS */
@@ -25,6 +25,23 @@ export async function generateEmbed(title, description, colour) {
         return embed
     }
 }
+
+// Generate an unused ID
+export function generateId() {
+    // Generate a random number between 1000 and 9999, and a random letter between 'A' and 'Z'
+    const randomId = (String.fromCharCode(65 + Math.floor(Math.random() * 26))) + (Math.floor(Math.random() * 9000) + 1000) 
+  
+    // Check if the random ID already exists in the array, repeat function if so
+    for (let i = 0; i < ids.length; i++) {
+        if (ids[i] === randomId) {
+            return generateId()
+        }
+    }
+  
+    // Return the generated random ID
+    return randomId
+}
+
 
 // Generate a list of comma-separated items
 export async function generateList(prompt, num) {
@@ -101,8 +118,14 @@ export function sanitise(str) {
         // Remove @s
         str = str.replace(/<@.*?>\s*/g, '')
 
+        // Remove newlines
+        str = str.replace(/\n/g, '')
+
+        // Remove any emotes
+        str = str.replace(/<[^>]+>/g, "")
+
         // Censored words
-        str = str.replace(/fag/gi, '**french**')
+        str = str.replace(/fag/gi, '**frenchman**')
         str = str.replace(/faggot/gi, '**frogurt**')
         str = str.replace(/Hitler/gi, '**Shitler**')
         str = str.replace(/nigga/gi, '**enward**')

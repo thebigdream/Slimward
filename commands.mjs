@@ -16,16 +16,26 @@ export const commands = [
         type: 1,
         options: [ {
             name: "prompt",
-            description: "Initial prompt",
+            description: "Initial prompt.",
             type: 3,
             required: true, } ]
     },
     {
-        name: 'list',
+        name: 'generate-item',
+        description: 'Generate an item.',
+        type: 1,
+        options: [ {
+            name: "name",
+            description: "What your item is called.",
+            type: 3,
+            required: true, } ]
+    },
+    {
+        name: 'generate-list',
         description: 'Generate a list of things.',
         type: 1,
         options: [ {
-            name: "prompt",
+            name: "list",
             description: "What the list will be about.",
             type: 3,
             required: true, } ]

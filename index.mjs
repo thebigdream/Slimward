@@ -1,8 +1,10 @@
 /* TO DO
-    - add emoji recognition
-        - what is the point? for the bot to see and use them?
-    - investigate using pm2 again
-    - ban }
+    - work on generate prompt a bit more
+    - work on item quality prompt, make it based off the item
+    - work on item description prompt, make it more creative
+    - replace emotes with their server name, replace bot output with actual emoji if matching
+    - add proper error embed
+    - check what message content is being logged re: generate-item
 */
 
 /* IMPORTS */
@@ -15,6 +17,9 @@ import random from 'random'
 
 /* EXPORTS */
 export var channel
+export var context = '[This is a Discord server known as the Mafia Server.]'
+export var personality = '[Enward is a witty, whimsical, enigmatic guy. He has a yellow face with beckoning eyes and a wicked smile. He is not afraid to speak his mind. He is friends with Gug and Mafiako.]'
+export var ids = []
 export const client = new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages,GatewayIntentBits.MessageContent,GatewayIntentBits.GuildMembers,]}); client.login(cfg.discordAPIKey)
 
 // Variables
@@ -26,9 +31,11 @@ client.on("ready", async () => {
     //await channel.send({ embeds: [await func.generateEmbed('What\'s that?', `A wild \`Cunt\` appears! ${client.emojis.cache.find(emoji => emoji.name === 'NPC')}`, cfg.colors.info)] })
     await channel.send({ embeds: [await func.generateEmbed('What\'s that?', `A wild \`Cunt\` appears!`, cfg.colors.info)] })
     await client.application.commands.set(cmd.commands) // Load commands
-    //var emojis = channel.guild.emojis.cache
-    //var emojiNames = emojis.map(emoji => emoji.name)
-    //console.log(emojiNames)
+    
+    //emoji debug
+    var emojis = channel.guild.emojis.cache
+    var emojiNames = emojis.map(emoji => emoji.name)
+    console.log(emojiNames)
 })
 
 // Respond to commands
@@ -38,13 +45,13 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.deferReply() // Defer reply by default
         const { commandName, options } = interaction // Store interaction name and user-defined options
 
+        // Ask a magic 8 ball for advice.
         if (commandName === '8ball') {
-            var input = func.sanitise(options.getString('question'))
+                var input = func.sanitise(options.getString('question'))
                 var output = func.sanitise(await novelAPI.generate(novelAPI.chat, `question:should I kill my friend?|answer:yes, but use an axe.|question:will I win the lottery today?|answer:absolutely not.|question:what are my chances of getting laid?|answer:oh buddy you don't want my answer.|question:what do you know about me?|answer:idk I'm here to say yes/no|question:is it okay to do LSD?|answer:maybe?|question:${input}|answer:`, 1, 6))
                 var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`🎱 Magic 8 Ball`, `**Question:** ${input}\n**Answer:** ${output}`, cfg.colors.success)] })
-            messages.find(message => message.id === reply.id).content = output
+            messages.find(message => message.id === reply.id).content = reply.content
         }
-
 
         // Combine two items and reply with result.
         if (commandName === 'combine') {
@@ -60,12 +67,24 @@ client.on('interactionCreate', async (interaction) => {
                 var input = func.sanitise(options.getString('prompt'))
                 var output = await novelAPI.generate(novelAPI.chat, `He went to the store and bought himself a pair of pants. They were leather and quite elegant. Little did he know they were counterfeit, and later that day, he was stopped by police who arrested him! He professed his innocence, but it was to no avail.|My stupid bitch mom ruins everything! I can't believe she threw away my favourite dress without asking me! My day is ruined. If only I had some way to get back at her, some plot for revenge. Hmm...I'll think about it.|President Wilson was an American politician and academic who served as the 28th president of the United States from 1913 to 1921. A member of the Democratic Party, Wilson served as the president of Princeton University and as the governor of New Jersey before winning the 1912 presidential election.|Do you know where the old woman next door went? She hasn't been around for a while and nobody wants to clean her house. There's already a large flock of birds living in there. It would be nice to give them more room.|${input}`, 24, 64)
                 var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`Generate`, `${input}${output}`, cfg.colors.success)] })
-            messages.find(message => message.id === reply.id).content = output
+            messages.find(message => message.id === reply.id).content = reply.content
+        }
+
+        // Generate an item using the user's prompt.
+        if (commandName === 'generate-item') {
+                var name = func.sanitise(options.getString('name'))
+                var id = func.generateId()
+                console.log(id)
+                var description = func.sanitise(await novelAPI.generate(novelAPI.chat, `item:sword|description:Forged in fire and honed with the wisdom of centuries, this sword is a testament to craftsmanship and strength. Its blade, sharp as the bite of winter's chill, reflects the courage of its bearer, while the hilt, wrapped in leather weathered by time, speaks of resilience and determination. With each swing, it whispers tales of battles won and legends born, a silent guardian in a world of chaos.|item:cat|description:Sleek and silent, the cat moves with a graceful poise that captivates the eye. Its fur, a symphony of hues from ebony to dusk, shimmers in the soft light. With eyes like golden orbs, it observes the world with a knowing gaze, embodying both mystery and elegance in its every step.|item:Bill Gates|description:Distinguished and visionary, Bill Gates commands the stage with an aura of intellect and purpose. His demeanor, a blend of humility and determination, reflects a lifetime of innovation and philanthropy. Behind his eyes, windows to a mind constantly in motion, lies a wealth of knowledge and foresight that has shaped the modern world. |item:${name}|description:`, 24, 64))
+                var rarity = await func.generateList(`rare,ordinary,plain,blackened,legendary,holy,cursed,super-powered,juiced,uncommon,shadowy,bloody,horrifying,new,legendary,enticing,dirty,stinky,bad,well-renowned,damaged,super rare,epic,shiny,antique,`, 1)
+                var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`Item #${id}`, `**${name}** *(${rarity})*\n${description}`, cfg.colors.success)] })
+                console.log(`${name} ${rarity} ${description}`)
+            messages.find(message => message.id === reply.id).content = reply.content
         }
 
         // Generate a list using the user's prompt.
-        if (commandName === 'list') {
-                var input = func.sanitise(options.getString('prompt'))
+        if (commandName === 'generate-list') {
+                var input = func.sanitise(options.getString('list'))
                 var output = (await func.generateList(`Fruit:grape,melon,rotten apple,watermelon,orange,manderin,mouldy banana,kiwi fruit,blueberry,jack fruit,strawberry,\nWhere I left my keys:in your pockets,in the oven,in the car,under the couch,do you even have keys?,at your friends house,over the fence\nSwords:rapier,dagger (heirloom),sharp knife,ancient broadsword,claymore,greatsword,dirk,\ncountries:Venezuela,Brazil,Australia,United Kingdom,China,Yugoslavia,Japan,Mexico,Fiji,\nHow to get away with murder:bury the body well,bribe the cops,just don't murder anyone,blame someone else,escape to another country,construct a strong alibi,\nmagical artefacts:robe of sorcery,ring of teleportation,mysterious gloves of shimmering light,arthurian sword,cursed undead horse,mithril breastplace of ice,\n${input}:`)).join(', ')
                 var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`List`, `**${input}:** ${func.sanitise(output)}.`, cfg.colors.success)] })
             messages.find(message => message.id === reply.id).content = reply.content
@@ -74,7 +93,7 @@ client.on('interactionCreate', async (interaction) => {
 })
 
 // Send a random message occasionally
-setInterval(async() => { if (random.int(0,100) === 0) {
+setInterval(async() => { if (random.int(0,150) === 0) {
     try { await channel.send(await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64)) } catch (error) { console.log('Error:' + error) }}
 }, 10000)
 
@@ -103,7 +122,7 @@ client.on("messageCreate", async (message) => {
 
             // Prepare response
             prompt = `${cfg.context}\n----\n${cfg.personality}\n----\n[Style: chat, chatroom.]\n${prompt.join("\n")}\nEnward:` // Add personality and style, then prime Enward's response
-            var response = await novelAPI.generate(novelAPI.chat, prompt, 1, 64)
+            var response = await novelAPI.generate(novelAPI.chat, prompt, 1, random.int(12,64))
 
             // Reply
             func.reply(message, func.sanitise(response))
