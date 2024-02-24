@@ -11,6 +11,29 @@ export const commands = [
             required: true, } ]
     },
     {
+        name: 'debug',
+        description: 'testing',
+        type: 1,
+    },
+    {
+        name: 'combine',
+        description: 'Combine two objects together.',
+        type: 1,
+        options: [ 
+        {
+            name: "item1",
+            description: "Object.",
+            type: 3,
+            required: true,
+        },
+        {
+            name: "item2",
+            description: "Object.",
+            type: 3,
+            required: true,
+        }]
+    },
+    {
         name: 'generate',
         description: 'Generate text based off an initial prompt.',
         type: 1,
@@ -39,23 +62,5 @@ export const commands = [
             description: "What the list will be about.",
             type: 3,
             required: true, } ]
-    },
-    {
-        name: 'combine',
-        description: 'Combine two objects together.',
-        type: 1,
-        options: [ 
-        {
-            name: "item1",
-            description: "Object.",
-            type: 3,
-            required: true,
-        },
-        {
-            name: "item2",
-            description: "Object.",
-            type: 3,
-            required: true,
-        }]
     },
 ]

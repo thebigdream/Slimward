@@ -3,19 +3,19 @@ import * as novelAPI from "./novelAPI.mjs"
 import * as cfg from "./config.mjs"
 import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
-import { channel, ids } from "./index.mjs"
+import { channel, world } from "./index.mjs"
 import random from 'random'
 
 /* EXPORTS */
 // Generate a Discord embed
-export async function generateEmbed(title, description, colour) {
-    if (title.length >= 256) title = title.substring(title.length - 256) //ensure title is less than ~256 char
-    if (description.length >= 2048) description = description.substring(description.length - 2048) //ensure desc is less than ~2048 char
+export async function generateEmbed(title, description, colour, thumbnail) {
+    if (description.length >= 2048) description = description.substring(description.length - 2048) // Wnsure desc is less than ~2048 char
     try {
         var embed = new EmbedBuilder()
             .setColor(colour)
-            .setTitle(title)
             .setDescription(description)
+        if (title) title = title.substring(title.length - 256), embed.setTitle(title) // If there is a title, ensure it is less than ~256 char
+        if (thumbnail) embed.setThumbnail(thumbnail) // Add thumbnail only if available
         return embed
     } catch {
         var embed = new EmbedBuilder()
@@ -28,20 +28,20 @@ export async function generateEmbed(title, description, colour) {
 
 // Generate an unused ID
 export function generateId() {
-    // Generate a random number between 1000 and 9999, and a random letter between 'A' and 'Z'
-    const randomId = (String.fromCharCode(65 + Math.floor(Math.random() * 26))) + (Math.floor(Math.random() * 9000) + 1000) 
-  
-    // Check if the random ID already exists in the array, repeat function if so
-    for (let i = 0; i < ids.length; i++) {
-        if (ids[i] === randomId) {
-            return generateId()
-        }
-    }
-  
-    // Return the generated random ID
-    return randomId
-}
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    let id
+    let exists
 
+    do {
+        const randomLetter = letters.charAt(Math.floor(Math.random() * letters.length))
+        const randomNumber = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+        id = randomLetter + randomNumber
+
+        exists = Object.values(world).flat().some(obj => obj.id === id)
+    } while (exists)
+
+    return id
+}
 
 // Generate a list of comma-separated items
 export async function generateList(prompt, num) {
@@ -62,7 +62,7 @@ export async function generateList(prompt, num) {
     list.pop()
     list = shuffle(list)
     list = list.slice(0, num)
-    return list
+    if (num === 1) return list.toString(); else return list
 }
 
 // Get user's nickname, or failing that, their username
