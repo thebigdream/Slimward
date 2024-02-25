@@ -14,6 +14,11 @@ export const commands = [
         name: 'debug',
         description: 'testing',
         type: 1,
+        options: [ {
+            name: "prompt",
+            description: "Initial prompt.",
+            type: 3,
+            required: true, } ]
     },
     {
         name: 'combine',

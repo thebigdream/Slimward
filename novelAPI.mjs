@@ -1,5 +1,8 @@
 /* IMPORTS */
 import * as config from "./config.mjs"
+import fs, { promises as fsPromises } from 'fs';
+import decompress from "decompress"
+import random from 'random'
 
 /* EXPORTS */
 // Used when generating chat-like text or descriptions.
@@ -75,6 +78,7 @@ const defaultBannedTokens = [
     [1538], //!"
     [1821], // *
     [2082], //....
+    [2542], //}}
     [2811], //.'
     [3662], //::
     [3939], //):
@@ -126,12 +130,12 @@ const defaultBannedTokens = [
 
 export async function generate(preset, input, min_length, max_length) {
     console.log(input)
-    var tempPreset = JSON.parse(JSON.stringify(preset)) // Create a temporary version of the preset object so it can be manipulated.
+    var tempPreset = JSON.parse(JSON.stringify(preset)) // Create a temporary version of the preset object so it can be manipulated
     tempPreset.input = input
     tempPreset.parameters.bad_words_ids.push(...defaultBannedTokens)
         if (min_length) tempPreset.parameters.min_length = min_length
         if (max_length) tempPreset.parameters.max_length = max_length
-        if (input.length > 8000) input = input.substring(input.length - 8000) // Ensure prompt is less than ~4000 tokens.
+        if (input.length > 8000) input = input.substring(input.length - 8000) // Ensure prompt is less than ~4000 tokens
     try {
         const response = await fetch('https://api.novelai.net/ai/generate', {
             method: 'POST',
@@ -146,6 +150,51 @@ export async function generate(preset, input, min_length, max_length) {
         return data.output // Return the response data as 'output'
     } catch (error) {
         console.error('Error:', error)
-        return '`The NovelAPI did not provide a response. Here, have this cookie instead 🍪`'
+        return '`Failed to fetch from NovelAPI.`'
+    }
+}
+
+export async function generateImage(input) {
+    const url = 'https://image.novelai.net/ai/generate-image'
+    const token = config.novelAPIKey
+
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+    };
+
+    const bodyData = {
+        input: input,
+        model: "nai-diffusion-3",
+        parameters: {
+            height: 192,
+            width: 192,
+        }
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(bodyData)
+        });
+
+        if (!response.ok) {
+            return undefined
+        }
+
+        try {
+            const arrayBuffer = await response.arrayBuffer() // Get the array buffer
+            const buffer = Buffer.from(arrayBuffer) // Create buffer from array buffer
+            let fileName = `./unzipped/server_image_${random.int(0,999999999)}.png`
+
+            fs.writeFileSync('zipped.zip', buffer)
+            await decompress("zipped.zip", "unzipped")
+            await fsPromises.rename('./unzipped/image_0.png', fileName)
+            return fileName
+        } catch (error) { return undefined }
+    } catch (error) {
+        console.error('Error:', error)
+        return
     }
 }

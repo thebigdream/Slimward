@@ -5,17 +5,19 @@ import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
 import { channel, world } from "./index.mjs"
 import random from 'random'
+import path from 'path'
 
 /* EXPORTS */
 // Generate a Discord embed
-export async function generateEmbed(title, description, colour, thumbnail) {
+export async function generateEmbed(title, description, colour, thumbnail, footer) {
     if (description.length >= 2048) description = description.substring(description.length - 2048) // Wnsure desc is less than ~2048 char
     try {
         var embed = new EmbedBuilder()
             .setColor(colour)
             .setDescription(description)
         if (title) title = title.substring(title.length - 256), embed.setTitle(title) // If there is a title, ensure it is less than ~256 char
-        if (thumbnail) embed.setThumbnail(thumbnail) // Add thumbnail only if available
+        if (thumbnail) embed.setThumbnail(`attachment://${path.basename(thumbnail)}`)
+        if (footer) embed.setFooter({ text: footer })
         return embed
     } catch {
         var embed = new EmbedBuilder()
