@@ -39,8 +39,18 @@ export const commands = [
         }]
     },
     {
-        name: 'generate',
-        description: 'Generate text based off an initial prompt.',
+        name: 'generate-image',
+        description: 'Generate an image using a text prompt.',
+        type: 1,
+        options: [ {
+            name: "prompt",
+            description: "Prompt.",
+            type: 3,
+            required: true, } ]
+    },
+    {
+        name: 'generate-text',
+        description: 'Generate text based off the initial prompt.',
         type: 1,
         options: [ {
             name: "prompt",

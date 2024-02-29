@@ -99,32 +99,15 @@ export function shuffle(array) {
 // Cleanse string of common grammar mistakes, offensive language etc.
 export function sanitise(str) {
     try {
-        // Remove opening space, if present
-        if (str.charAt(0) == ' ') str = str.slice(1)
-
-        // Replace double and triple spaces with a single space
-        str = str.replace(/ {2,}/g, ' ')
-
-        // Capitalize any 'i' that is on its own
-        str = str.replace(/\si\s/g, ' I ')
-
-        // Replace multiple exclamation or question marks with a single one
-        str = str.replace(/([!?])\1+/g, "$1")
-
-        // Add space after commas if one not already existent
-        str = str.replace(/([^ ,])(,)([^ ])/g, '$1, $3')
-
-        // Remove underscores
-        str = str.replace(/_/g, "")
-
-        // Remove @s
-        str = str.replace(/<@.*?>\s*/g, '')
-
-        // Remove newlines
-        str = str.replace(/\n/g, '')
-
-        // Remove any emotes
-        str = str.replace(/<[^>]+>/g, "")
+        if (str.charAt(0) == ' ') str = str.slice(1) // Remove opening space, if present
+        str = str.replace(/ {2,}/g, ' ') // Replace double and triple spaces with a single space
+        str = str.replace(/\si\s/g, ' I ') // Capitalize any 'i' that is on its own
+        str = str.replace(/([!?])\1+/g, "$1") // Replace multiple exclamation or question marks with a single one
+        str = str.replace(/([^ ,])(,)([^ ])/g, '$1, $3') // Add space after commas if one not already existent
+        str = str.replace(/_/g, "") // Remove underscores
+        str = str.replace(/<@.*?>\s*/g, '') // Remove @s
+        str = str.replace(/\n/g, '') // Remove newlines
+        str = str.replace(/<[^>]+>/g, "") // Remove any emotes
 
         // Censored words
         str = str.replace(/fag/gi, '**frenchman**')
@@ -138,11 +121,8 @@ export function sanitise(str) {
         str = str.replace(/nazi/gi, '**nasi goreng**')
         str = str.replace(/tard/gi, '**toyota**')
 
-        // Replace first letter of string with uppercase
-        str = str.replace(/^\S/, (match) => match.toUpperCase())
-
-        // Capitalize the first letter of each sentence
-        str = str.replace(/(^\w|\.\s*\w)/g, (match) => match.toUpperCase())
+        str = str.replace(/^\S/, (match) => match.toUpperCase()) // Replace first letter of string with uppercase
+        str = str.replace(/(^\w|\.\s*\w)/g, (match) => match.toUpperCase()) // Capitalize the first letter of each sentence
 
         // Make URLs lowercase
         str = str.replace(/(?:^|\s)(https?:\/\/\S+)/gi, function(match) {

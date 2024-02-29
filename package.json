@@ -5,6 +5,7 @@
     "discord.js": "^14.14.1",
     "fs": "^0.0.1-security",
     "path": "^0.12.7",
-    "random": "^4.1.0"
+    "random": "^4.1.0",
+    "weighted": "^1.0.0"
   }
 }

@@ -154,6 +154,7 @@ export async function generate(preset, input, min_length, max_length) {
     }
 }
 
+
 export async function generateImage(input) {
     const url = 'https://image.novelai.net/ai/generate-image'
     const token = config.novelAPIKey
@@ -161,40 +162,39 @@ export async function generateImage(input) {
     const headers = {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
-    };
+    }
 
     const bodyData = {
         input: input,
         model: "nai-diffusion-3",
         parameters: {
-            height: 192,
-            width: 192,
+            height: 384,
+            width: 384,
+            negative_prompt: "NSFW",
+            uncond_scale: 1.0
         }
-    };
-
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(bodyData)
-        });
-
-        if (!response.ok) {
-            return undefined
-        }
-
-        try {
-            const arrayBuffer = await response.arrayBuffer() // Get the array buffer
-            const buffer = Buffer.from(arrayBuffer) // Create buffer from array buffer
-            let fileName = `./unzipped/server_image_${random.int(0,999999999)}.png`
-
-            fs.writeFileSync('zipped.zip', buffer)
-            await decompress("zipped.zip", "unzipped")
-            await fsPromises.rename('./unzipped/image_0.png', fileName)
-            return fileName
-        } catch (error) { return undefined }
-    } catch (error) {
-        console.error('Error:', error)
-        return
     }
+
+    let attempts = 5 // Number of attempts
+    while (attempts > 0) {
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(bodyData)
+            })
+
+            if (response.ok) {
+                let fileName = `./unzipped/server_image_${random.int(0,999999999)}.png`
+                let buffer = Buffer.from(await response.arrayBuffer()) // Convert response to an arrayBuffer
+                fs.writeFileSync('zipped.zip', buffer) // Write zip file to storage
+                await decompress("zipped.zip", "unzipped") // Decompress zip file
+                await fsPromises.rename('./unzipped/image_0.png', fileName) // Rename unzipped file
+                return fileName
+            }
+        } catch (error) { console.error('Error:', error) }
+        await new Promise(resolve => setTimeout(resolve, 3000)) // Wait for 3 seconds
+        attempts-- // Decrement attempts
+    }
+    return undefined // Return undefined if all attempts failed
 }
