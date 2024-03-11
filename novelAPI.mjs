@@ -28,8 +28,6 @@ export const chat = {
         ],
         "stop_sequences": [[85]],
         "bad_words_ids": [],
-        "cfg_scale": 1.2,
-        "cfg_uc":`<|endoftext|>[ Author: Tara Gilesbie; Title: Five Time a Thing Happened and One Time It Didn't; Tags: self-indulgent nonsense, teenage fanfic; Genre: plot what plot ][ Style: bad writing, stupid, illogical, bad grammar ] Asdfghjklöä! im`
   }
 }
 
@@ -64,35 +62,34 @@ const defaultBannedTokens = [
     [25], // "
     [58], //<|maskend|>
     [60], //<|fillend|>
-    [530], // -
+    //[530], // -
     [588], //."
-    [625], //..
+    //[625], //..
     [803], //,"
-    [821], //...
+    //[821], //...
     [877], //?"
-    [900], //).
-    [1165], // '
+    //[900], //).
+    //[1165], // '
     [1214], //:
     [1139], // |
     [1431], // [
     [1538], //!"
     [1821], // *
-    [2082], //....
+    //[2082], //....
     [2542], //}}
-    [2811], //.'
+    //[2811], //.'
     [3662], //::
     [3939], //):
-    [4035], // ...
+    //[4035], // ...
     [4080], //---
     [4461], //||
     [5473], //],
     [7595], // `
     [7794], // ]
     [7975], // ![
-    [8209], //!!!s
     [8552], //,,
     [8958], //author
-    [10414], //."
+    //[10414], //."
     [10601], //.[
     [10681], //][
     [11246], //.}
@@ -112,13 +109,13 @@ const defaultBannedTokens = [
     [49247, 7001], //Tags
     [49264], //"
     [49287], //:
-    [49302], //=
+    //[49302], //=
     [49313], //_
     [49332], //}
     [49333], //{
     [49352], //]
     [49356], //[
-    [49360], //;
+    //[49360], //;
     [49376], //|
     [49399], //*
     [49405], //>
@@ -128,23 +125,24 @@ const defaultBannedTokens = [
     [51909], //sus space character
 ]
 
+// Generate text
 export async function generate(preset, input, min_length, max_length) {
-    console.log(input)
-    var tempPreset = JSON.parse(JSON.stringify(preset)) // Create a temporary version of the preset object so it can be manipulated
-    tempPreset.input = input
-    tempPreset.parameters.bad_words_ids.push(...defaultBannedTokens)
-        if (min_length) tempPreset.parameters.min_length = min_length
-        if (max_length) tempPreset.parameters.max_length = max_length
-        if (input.length > 8000) input = input.substring(input.length - 8000) // Ensure prompt is less than ~4000 tokens
     try {
-        const response = await fetch('https://api.novelai.net/ai/generate', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${config.novelAPIKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(tempPreset)
-        })
+        console.log(input)
+        var tempPreset = JSON.parse(JSON.stringify(preset)) // Create a temporary version of the preset object so it can be manipulated
+        tempPreset.input = input
+        tempPreset.parameters.bad_words_ids.push(...defaultBannedTokens)
+            if (min_length) tempPreset.parameters.min_length = min_length
+            if (max_length) tempPreset.parameters.max_length = max_length
+            if (input.length > 8000) input = input.substring(input.length - 8000) // Ensure prompt is less than ~4000 tokens
+            const response = await fetch('https://api.novelai.net/ai/generate', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${config.novelAPIKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(tempPreset)
+            })
         const data = await response.json()
         console.log('Output:', data); // Log the response data
         return data.output // Return the response data as 'output'
@@ -154,47 +152,49 @@ export async function generate(preset, input, min_length, max_length) {
     }
 }
 
-
+// Generate image
 export async function generateImage(input) {
-    const url = 'https://image.novelai.net/ai/generate-image'
-    const token = config.novelAPIKey
+    try {
+        const url = 'https://image.novelai.net/ai/generate-image'
+        const token = config.novelAPIKey
 
-    const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-    }
-
-    const bodyData = {
-        input: input,
-        model: "nai-diffusion-3",
-        parameters: {
-            height: 384,
-            width: 384,
-            negative_prompt: "NSFW",
-            uncond_scale: 1.0
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
         }
-    }
 
-    let attempts = 5 // Number of attempts
-    while (attempts > 0) {
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(bodyData)
-            })
-
-            if (response.ok) {
-                let fileName = `./unzipped/server_image_${random.int(0,999999999)}.png`
-                let buffer = Buffer.from(await response.arrayBuffer()) // Convert response to an arrayBuffer
-                fs.writeFileSync('zipped.zip', buffer) // Write zip file to storage
-                await decompress("zipped.zip", "unzipped") // Decompress zip file
-                await fsPromises.rename('./unzipped/image_0.png', fileName) // Rename unzipped file
-                return fileName
+        const bodyData = {
+            input: input,
+            model: "nai-diffusion-3",
+            parameters: {
+                height: 512,
+                width: 512,
+                negative_prompt: "NSFW",
+                uncond_scale: 1.0
             }
-        } catch (error) { console.error('Error:', error) }
-        await new Promise(resolve => setTimeout(resolve, 3000)) // Wait for 3 seconds
-        attempts-- // Decrement attempts
-    }
-    return undefined // Return undefined if all attempts failed
+        }
+
+        let attempts = 5 // Number of attempts before giving up
+        while (attempts > 0) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(bodyData)
+                })
+
+                if (response.ok) {
+                    let fileName = `./unzipped/server_image_${random.int(0,999999999)}.png`
+                    let buffer = Buffer.from(await response.arrayBuffer()) // Convert response to an arrayBuffer
+                    fs.writeFileSync('zipped.zip', buffer) // Write zip file to storage
+                    await decompress("zipped.zip", "unzipped") // Decompress zip file
+                    await fsPromises.rename('./unzipped/image_0.png', fileName) // Rename unzipped file
+                    return fileName
+                }
+            } catch (error) { console.error('Error:', error) }
+            await new Promise(resolve => setTimeout(resolve, 3000)) // Wait for 3 seconds before retrying
+            attempts-- // Decrement attempts
+        }
+        return undefined // Return undefined if all 5 attempts fail
+    } catch (error) { console.error('Error:', error) }
 }

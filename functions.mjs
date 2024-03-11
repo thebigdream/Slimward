@@ -8,23 +8,23 @@ import random from 'random'
 import path from 'path'
 
 /* EXPORTS */
+// Generate an error message embed
+export async function error(message) {
+    return generateEmbed(undefined, message, cfg.colors.alert, undefined, undefined)
+}
+
 // Generate a Discord embed
 export async function generateEmbed(title, description, colour, thumbnail, footer) {
-    if (description.length >= 2048) description = description.substring(description.length - 2048) // Wnsure desc is less than ~2048 char
     try {
         var embed = new EmbedBuilder()
-            .setColor(colour)
-            .setDescription(description)
-        if (title) title = title.substring(title.length - 256), embed.setTitle(title) // If there is a title, ensure it is less than ~256 char
-        if (thumbnail) embed.setThumbnail(`attachment://${path.basename(thumbnail)}`)
-        if (footer) embed.setFooter({ text: footer })
+            if (colour) embed.setColor(colour)
+            if (description) embed.setDescription(description)
+            if (thumbnail) embed.setThumbnail(`attachment://${path.basename(thumbnail)}`) 
+            if (title) title = title.substring(0, 256), embed.setTitle(title) // If there is a title, ensure it is less than ~256 char
+            if (footer) embed.setFooter({ text: footer })
         return embed
     } catch {
-        var embed = new EmbedBuilder()
-            .setColor(cfg.colors.alert)
-            .setTitle('System')
-            .setDescription('There was an issue generating an embed message.')
-        return embed
+        return await error('There was an issue generating an embed message.')
     }
 }
 
@@ -33,23 +33,19 @@ export function generateId() {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     let id
     let exists
-
     do {
         const randomLetter = letters.charAt(Math.floor(Math.random() * letters.length))
         const randomNumber = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
         id = randomLetter + randomNumber
-
         exists = Object.values(world).flat().some(obj => obj.id === id)
-    } while (exists)
-
-    return id
+    } while (exists) return id
 }
 
 // Generate a list of comma-separated items
 export async function generateList(prompt, num) {
     let list
     let generated
-    if (!num) num = random.int(3,7)
+    if (!num) num = 1
 
     // Generate list
     while (!generated) {
@@ -76,10 +72,23 @@ export function getName(message) {
 // Reply to message author
 export async function reply(message, response) {
     try { 
-            message.channel.sendTyping().catch(error => {console.error(`Error typing message: ${error}`)})
-            await setTimeout(10000)
-            message.reply(response).catch(error => {console.error(`Error sending message: ${error}`)})
+        message.channel.sendTyping().catch(error => {console.error(`Error typing message: ${error}`)})
+        await setTimeout(10000)
+        message.reply(response).catch(error => {console.error(`Error sending message: ${error}`)})
     } catch { console.log('Error: Could not reply to message.') }
+}
+
+// Search for object using ID
+export function searchArray(property, value) {
+    var matchingItems = []
+    for (const key in world) {
+        if (world.hasOwnProperty(key) && Array.isArray(world[key])) {
+            var results = world[key].filter(item => item[property] === value)
+            matchingItems.push(...results)
+        }
+    }
+    console.log(matchingItems)
+    return matchingItems.length > 0 ? matchingItems : null
 }
 
 // Shuffle items in an array

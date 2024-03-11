@@ -11,12 +11,12 @@ export const commands = [
             required: true, } ]
     },
     {
-        name: 'debug',
-        description: 'testing',
+        name: 'buy',
+        description: 'Buy an item.',
         type: 1,
         options: [ {
-            name: "prompt",
-            description: "Initial prompt.",
+            name: "item",
+            description: "ID of the item you're buying.",
             type: 3,
             required: true, } ]
     },
@@ -39,7 +39,7 @@ export const commands = [
         }]
     },
     {
-        name: 'generate-image',
+        name: 'gen-image',
         description: 'Generate an image using a text prompt.',
         type: 1,
         options: [ {
@@ -49,7 +49,7 @@ export const commands = [
             required: true, } ]
     },
     {
-        name: 'generate-text',
+        name: 'gen-text',
         description: 'Generate text based off the initial prompt.',
         type: 1,
         options: [ {
@@ -59,7 +59,7 @@ export const commands = [
             required: true, } ]
     },
     {
-        name: 'generate-item',
+        name: 'gen-item',
         description: 'Generate an item.',
         type: 1,
         options: [ {
@@ -69,12 +69,42 @@ export const commands = [
             required: true, } ]
     },
     {
-        name: 'generate-list',
+        name: 'gen-list',
         description: 'Generate a list of things.',
         type: 1,
         options: [ {
             name: "list",
             description: "What the list will be about.",
+            type: 3,
+            required: true, } ]
+    },
+    {
+        name: 'inventory',
+        description: 'Display a list of owned items.',
+        type: 1,
+    },
+    {
+        name: 'players',
+        description: 'List all players.',
+        type: 1,
+    },
+    {
+        name: 'search',
+        description: 'Search for an object.',
+        type: 1,
+        options: [ {
+            name: "id",
+            description: "ID of object.",
+            type: 3,
+            required: true, } ]
+    },
+    {
+        name: 'sell',
+        description: 'Sell an item.',
+        type: 1,
+        options: [ {
+            name: "item",
+            description: "ID of the item you're selling.",
             type: 3,
             required: true, } ]
     },
