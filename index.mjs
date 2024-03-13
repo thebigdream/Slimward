@@ -1,30 +1,26 @@
 /* TO DO
     - add /generate-NPC command
-    - add /inventory command
-    - add /sell command
-    - add value to inventory command
-    - prune bots from player list
-    - re-introduce truncate
     - create general game concept - how do items, people, places, currency interact?
-        - people generate items, NPCs and locations which then populate the world
-            - e.g. if an NPC is created, it will fill a location and receive unowned items
+        - users generate prototype items, NPCs and locations
+            - these are then used to fill the world using special events
+            - the world should also be able to generate its own generic objects
     - create savefile system
     - sort out 'owner' display in embeds
-    - work on displaying players, their cash, their items
     - add messages for buy, sell etc. commands
     - explore ephemeral embeds
     - create a function for displaying items, NPCs, locations etc.
-    - replace rarity stars with words or smaller stars
 */
 
 /* IMPORTS */
 import { Client, Collection, Events, GatewayIntentBits,  SlashCommandBuilder } from "discord.js"
+import { world } from "./savefile.mjs"
 import * as cfg from "./config.mjs"
 import * as cmd from "./commands.mjs"
 import * as func from "./functions.mjs"
 import * as novelAPI from "./novelAPI.mjs"
 import random from 'random'
 import weighted from 'weighted'
+import fs from 'fs'
 
 /* EXPORTS */
 export var channel
@@ -32,12 +28,6 @@ export var context = `[This is a Discord server known as the Mafia Server.]`
 export var messages = [] // Channel messages are stored locally to prevent fuckery with the Discord API
 export var personality = `[Enward is a witty, whimsical, enigmatic guy who enjoys verbose discussion. He has a yellow face with beckoning eyes and a wicked smile. He is not afraid to speak his mind. He is friends with Gug and Mafiako, who are chatbots like him.]`
 export var rarities = { '☆': 0.8, '☆☆': 0.4, '☆☆☆': 0.2, '☆☆☆☆': 0.1, '☆☆☆☆☆': 0.05 }
-export var world = {
-    items: [],
-    locations: [],
-    NPCs: [],
-    players: [],
-}
 export const client = new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages,GatewayIntentBits.MessageContent,GatewayIntentBits.GuildMembers,]}); client.login(cfg.discordAPIKey)
 
 // Establish connection to channel
@@ -121,11 +111,9 @@ client.on('interactionCreate', async (interaction) => {
             let input = func.sanitise(options.getString('name'))
             let description = func.sanitise(await novelAPI.generate(novelAPI.chat, `item:sword|description:Forged in fire and honed with the wisdom of centuries, this sword is a testament to craftsmanship and strength. Its blade, sharp as the bite of winter's chill, reflects the courage of its bearer, while the hilt, wrapped in leather weathered by time, speaks of resilience and determination. With each swing, it whispers tales of battles won and legends born, a silent guardian in a world of chaos. Its hilt is engraved with a snakelike figure, perhaps a deity or monster. Many covet this item, seeking its rare, radiant power.|item:cat|description:Sleek and silent, the cat moves with a graceful poise that captivates the eye. Its fur, a symphony of hues from ebony to dusk, shimmers in the soft light. With eyes like golden orbs, it observes the world with a knowing gaze, embodying both mystery and elegance in its every step. They say cats have nine lives, but the truth is they have but one, for they never die.|item:Bill Gates|description:Distinguished and visionary, Bill Gates commands the stage with an aura of intellect and purpose. His demeanor, a blend of humility and determination, reflects a lifetime of innovation and philanthropy. Behind his eyes, windows to a mind constantly in motion, lies a wealth of knowledge and foresight that has shaped the modern world. Many have tried to emulate his success, but who can say that they have stood in his shoes?|item:${input}|description:`, 48, 86))
             let thumbnail = await novelAPI.generateImage(`{{${input}}}, amazing quality, very aesthetic, 2022, [[black background]]`)
-            let rarity = weighted.select(rarities)
-            let value = rarity.length * random.int(10,100)
-                let item = { description:description, id:func.generateId(), name:input, owner:null, rarity:rarity, thumbnail:thumbnail, type:'item', value:value }
+                let item = { description:description, name:input, owner:null, prototype:true, thumbnail:thumbnail, type:'item' }
                 world.items.push(item)
-            var reply = await interaction.editReply({ embeds: [await func.generateEmbed(item.name, item.description, cfg.colors.success, thumbnail, `#${item.id} / ${item.rarity} / ${item.value}ḇ / Owner: ${item.owner}`) ], files: [thumbnail] })
+            var reply = await interaction.editReply({ embeds: [await func.generateEmbed(item.name, item.description, cfg.colors.success, thumbnail, undefined) ], files: [thumbnail] })
             messages.find(message => message.id === reply.id).content = `${item.name}\n${item.description}`
         }
 
@@ -143,7 +131,7 @@ client.on('interactionCreate', async (interaction) => {
             let output = ''
             if (!inventory) return await interaction.editReply({ embeds: [ await func.error('No items found for this player.') ] })
             for (var i = 0; i < inventory.length; i++) {
-                output += `**${inventory[i].name}** / \`#${inventory[i].id}\` / \'${inventory[i].rarity}\' / \`${inventory[i].value}ḇ\`\n`
+                output += `- **${inventory[i].name}** / \`#${inventory[i].id}\` / ${inventory[i].rarity} / \`${inventory[i].value}ḇ\`\n`
             }
             var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`Inventory`, `${output}`, cfg.colors.info, undefined)] })
             messages.find(message => message.id === reply.id).content = inventory
@@ -198,7 +186,12 @@ client.on('interactionCreate', async (interaction) => {
 
 // Send a random message occasionally
 setInterval(async() => { if (random.int(0,150) === 0) {
-    try { await channel.send(await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64)) } catch (error) { console.log('Error:' + error) }}
+    try { 
+        await channel.send(await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64)) 
+        fs.writeFileSync('./saves.mjs', 'export const world = ' + JSON.stringify(world), (err) => {
+            console.log('World saved successfully.')
+        })
+    } catch (error) { console.log('Error:' + error) }}
 }, 10000)
 
 // Listen for messages and reply if valid

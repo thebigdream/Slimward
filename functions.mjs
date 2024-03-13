@@ -1,9 +1,10 @@
 /* IMPORTS */
 import * as novelAPI from "./novelAPI.mjs"
 import * as cfg from "./config.mjs"
+import { channel } from "./index.mjs"
 import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
-import { channel, world } from "./index.mjs"
+import { world } from "./savefile.mjs"
 import random from 'random'
 import path from 'path'
 

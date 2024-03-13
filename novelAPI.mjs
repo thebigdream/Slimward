@@ -174,7 +174,7 @@ export async function generateImage(input) {
             }
         }
 
-        let attempts = 5 // Number of attempts before giving up
+        let attempts = 5 
         while (attempts > 0) {
             try {
                 const response = await fetch(url, {
@@ -193,7 +193,7 @@ export async function generateImage(input) {
                 }
             } catch (error) { console.error('Error:', error) }
             await new Promise(resolve => setTimeout(resolve, 3000)) // Wait for 3 seconds before retrying
-            attempts-- // Decrement attempts
+            attempts--
         }
         return undefined // Return undefined if all 5 attempts fail
     } catch (error) { console.error('Error:', error) }
