@@ -49,6 +49,16 @@ export const commands = [
             required: true, } ]
     },
     {
+        name: 'gen-npc',
+        description: 'Generate an NPC using a text prompt.',
+        type: 1,
+        options: [ {
+            name: "name",
+            description: "The NPC's name.",
+            type: 3,
+            required: true, } ]
+    },
+    {
         name: 'gen-text',
         description: 'Generate text based off the initial prompt.',
         type: 1,

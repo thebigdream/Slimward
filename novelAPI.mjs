@@ -16,9 +16,9 @@ export const chat = {
         "repetition_penalty_presence": 0,
         "repetition_penalty_range": 8000,
         "repetition_penalty_slope": 0.09,
-        "temperature": 1,
+        "temperature": 1.0,
         "top_k": 100,
-        "top_p": 5,
+        "top_p": 15,
         "tail_free_sampling": 1,
         "generate_until_sentence": true,
         "logit_bias_exp": 
@@ -42,7 +42,7 @@ export const list = {
         "repetition_penalty_presence": 0,
         "repetition_penalty_range": 8000,
         "repetition_penalty_slope": 0.09,
-        "temperature": 1,
+        "temperature": 1.0,
         "top_k": 100,
         "top_p": 5,
         "tail_free_sampling": 1,
@@ -184,11 +184,11 @@ export async function generateImage(input) {
                 })
 
                 if (response.ok) {
-                    let fileName = `./unzipped/server_image_${random.int(0,999999999)}.png`
+                    let fileName = `./images/image_${random.int(0,999999999)}.png`
                     let buffer = Buffer.from(await response.arrayBuffer()) // Convert response to an arrayBuffer
                     fs.writeFileSync('zipped.zip', buffer) // Write zip file to storage
-                    await decompress("zipped.zip", "unzipped") // Decompress zip file
-                    await fsPromises.rename('./unzipped/image_0.png', fileName) // Rename unzipped file
+                    await decompress("zipped.zip", "images") // Decompress zip file
+                    await fsPromises.rename('./images/image_0.png', fileName) // Rename unzipped file
                     return fileName
                 }
             } catch (error) { console.error('Error:', error) }

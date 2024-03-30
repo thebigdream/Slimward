@@ -4,7 +4,7 @@ import * as cfg from "./config.mjs"
 import { channel } from "./index.mjs"
 import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
-import { world } from "./savefile.mjs"
+import { world } from "./saves/save_1.mjs"
 import random from 'random'
 import path from 'path'
 
@@ -80,16 +80,15 @@ export async function reply(message, response) {
 }
 
 // Search for object using ID
-export function searchArray(property, value) {
-    var matchingItems = []
-    for (const key in world) {
-        if (world.hasOwnProperty(key) && Array.isArray(world[key])) {
-            var results = world[key].filter(item => item[property] === value)
-            matchingItems.push(...results)
-        }
-    }
-    console.log(matchingItems)
-    return matchingItems.length > 0 ? matchingItems : null
+export function searchArray(arrays, propertiesArray, valuesArray) {
+    var matches = arrays.filter(array => {
+        return array.some(item => {
+            return propertiesArray.every((props, index) => {
+                return item.hasOwnProperty(props) && item[props] === valuesArray[index]
+            })
+        })
+    })
+    return matches.length > 0 ? matches : null;
 }
 
 // Shuffle items in an array
@@ -116,8 +115,8 @@ export function sanitise(str) {
         str = str.replace(/([^ ,])(,)([^ ])/g, '$1, $3') // Add space after commas if one not already existent
         str = str.replace(/_/g, "") // Remove underscores
         str = str.replace(/<@.*?>\s*/g, '') // Remove @s
-        str = str.replace(/\n/g, '') // Remove newlines
-        str = str.replace(/<[^>]+>/g, "") // Remove any emotes
+        str = str.replace(/<[^>]+>/g, '') // Remove any emotes
+        str = str.replace(/\(as\s*[^)]*\):\s*/g, '') // Remove impersonation text
 
         // Censored words
         str = str.replace(/fag/gi, '**frenchman**')
