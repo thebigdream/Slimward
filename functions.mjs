@@ -67,7 +67,8 @@ export async function generateList(prompt, num) {
 // Get user's nickname, or failing that, their username
 export function getName(message) { 
     if (message.guild.members.cache.get(message.author.id).nickname) return sanitise(message.guild.members.cache.get(message.author.id).nickname)
-    else return sanitise(message.member.user.username)
+    else if (message.member.user.username) return sanitise(message.member.user.username) 
+    else return 'User'
 }
 
 // Reply to message author

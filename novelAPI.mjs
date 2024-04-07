@@ -24,7 +24,7 @@ export const chat = {
         "logit_bias_exp": 
         [
             { "bias":0.01,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[[49230, 49338, 49335]]] }, // Make it slightly more likely to add full stops, commas and exclamantion marks.
-            { "bias":-0.05,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[[85]]] }, // Make it slightly less likely to output new lines, lengthening average output.
+            //{ "bias":-0.05,"ensure_sequence_finish":true,"generate_once":false,"sequence":[[[85]]] }, // Make it slightly less likely to output new lines, lengthening average output.
         ],
         "stop_sequences": [[85]],
         "bad_words_ids": [],

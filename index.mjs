@@ -12,7 +12,9 @@
     - spin event manager into its own .mjs file
     - send errors when items, messages or w/e fails to generate properly, rather than error text
     - perform error validation on /gen-npc
+
     - issue with not removing brackets for npcs like heman(her)
+    - failing to read author, mustn't be being saved to messages properly
 */
 
 /* IMPORTS */
@@ -205,7 +207,7 @@ setInterval(async() => {
     try {
         // Send one-shot message
         if (random.int(0,50) === 0) {
-            await channel.send('(as Enward) ' + await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64))
+            await channel.send('(as Enward): ' + await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64))
         }
 
         // Save world file
@@ -227,31 +229,28 @@ client.on("messageCreate", async (message) => {
             if (message.author.bot) if (random.int(0,10) === 0) return
 
             // Add one brahcoin for each interaction
-            try { func.searchArray([world.players], ['name'], [message.author.username])[0].value++ } catch { }
+            try { func.searchArray([world.players], ['name'], [message.author.name])[0].value++ } catch { }
             
             // Build chat history using previous messages (if available)
             var query = messages[messages.length-1] // Start query at latest message
             var prompt = []
             var character = defaultCharacter // Default to Enward
 
-            // Log previous messages so long as query does not fail to find another message
-            while (typeof query !== 'undefined') { 
-                try {  
-                    try { if (query.content.includes('[generate]')) character = query.author, query = undefined } catch { } // Try to make generated thing the character                 
-                    prompt.unshift(func.sanitise(query.author.name) + ': ' + func.sanitise(query.content))
-                    query = messages.find(function(messages) { return messages.id === query.parent.messageId })
-
-                } catch (error) { console.log(error), query = undefined }
+            while (query) {
+                try { if (query.content.includes('[generate]')) character = query.author, query = undefined } catch { } // Try to make generated thing the character                 
+                try { prompt.unshift(func.sanitise(query.author.name) + ': ' + func.sanitise(query.content)) } catch { } // Add message content to prompt
+                try { query = messages.find(function(messages) { return messages.id === query.parent.messageId }) } catch { break } // Try to find next message in thread, otherwise break
             }
 
             prompt = prompt.join('\n')
             prompt = prompt.replace(/Enward/g, character.name)
             prompt = func.sanitise(prompt)
-            prompt = `[Description of ${character.name}: ${character.description}.]\n[Personality of ${character.name}: ${func.sanitise(character.personality)}.]\n----\n[Style: chat.]\n----\n${prompt}\n${character.name}:` // Add personality and style, then prime Enward's response
+            prompt = `[Name: ${character.name}.]\n[Quote: ${character.quote}]\n[Description: ${character.description}.]\n[Personality: ${func.sanitise(character.personality)}.]\n----\n[Style: chat.]\n----\n${prompt}\n${character.name}:` // Add personality and style, then prime Enward's response
             var response = func.sanitise(await novelAPI.generate(novelAPI.chat, prompt, 1, random.int(1,64)))
+            response.author = character
 
             // Reply
             func.reply(message, `(as ${character.name}): ${response}`)
         } 
     } catch (error) { console.error('Error:', error) }
-})
+})hju
