@@ -1,20 +1,13 @@
 /* TO DO
-    - create general game concept - how do items, people, places, currency interact?
-        - users generate prototype items, NPCs and locations
-            - these are then used to fill the world using special events
-            - the world should also be able to generate its own generic objects
-    - create savefile system
-    - sort out 'owner' display in embeds
-    - add messages for buy, sell etc. commands
-    - explore ephemeral embeds
-    - create a function for displaying items, NPCs, locations etc.
-    - clean up generateEmbed order of fields
+    - fix /buy and /sell
+    - fix /players
+    - fix /8ball
+    - make it so generateObject will use any prototype if no type specified
+    - flesh out savefile system
     - spin event manager into its own .mjs file
-    - send errors when items, messages or w/e fails to generate properly, rather than error text
-    - perform error validation on /gen-npc
-
+    - perform error validation on /gen
     - issue with not removing brackets for npcs like heman(her)
-    - failing to read author, mustn't be being saved to messages properly
+    - ban brackets
 */
 
 /* IMPORTS */
@@ -31,9 +24,8 @@ import fs from 'fs'
 /* EXPORTS */
 export const colors = { info:"#2596be", alert:"#D0342C", success:"#ffcc5f" }
 export var channel
-export var defaultCharacter = { name: 'Enward', description: 'Enward is a witty, whimsical, enigmatic guy who enjoys verbose discussion. He has a yellow face with beckoning eyes and a wicked smile. He is not afraid to speak his mind.', personality: 'witty, chatty, crude', quote: "'Deez nuts.'"}
+export var defaultCharacter = { name:'Enward', description: 'Enward is a witty, whimsical, enigmatic guy who enjoys verbose discussion. He has a yellow face with beckoning eyes and a wicked smile. He is not afraid to speak his mind.', traits:'witty, chatty, crude' }
 export var messages = [] // Channel messages are stored locally to prevent fuckery with the Discord API
-export var rarities = { '☆': 0.8, '☆☆': 0.4, '☆☆☆': 0.2, '☆☆☆☆': 0.1, '☆☆☆☆☆': 0.05 }
 export const client = new Client({intents:[GatewayIntentBits.Guilds,GatewayIntentBits.GuildMessages,GatewayIntentBits.MessageContent,GatewayIntentBits.GuildMembers,]}); client.login(cfg.discordAPIKey)
 
 // Establish connection to channel
@@ -46,7 +38,7 @@ client.on("ready", async () => {
     channel.guild.members.fetch()
     .then(members => {
         members.forEach(member => {
-            if ((!member.user.bot) && (!func.searchArray([world.players], ['name'], [member.user.tag]))) world.players.push({ name: member.user.tag, id: func.generateId(), type: 'player', value: 100 })
+            if ((!member.user.bot) && (!func.searchArray([world], ['name'], [member.user.tag]))) world.push({ name: member.user.tag, id: func.generateId(), type: 'player', value: 100 })
         })
     })
     .catch(console.error)
@@ -58,7 +50,7 @@ client.on('interactionCreate', async (interaction) => {
         if (!interaction.isCommand()) return
         await interaction.deferReply() // Defer reply by default
         const { commandName, options } = interaction // Store interaction name and user-defined options
-        var player = func.searchArray([world.players], ['name'], [interaction.user.username])[0] // Log the player involved in case their object needs to be manipulated
+        var player = func.searchArray([world], ['name'], [interaction.user.username])[0] // Log the player involved in case their object needs to be manipulated
 
         // Ask a magic 8 ball for advice.
         if (commandName === '8ball') {
@@ -68,12 +60,12 @@ client.on('interactionCreate', async (interaction) => {
             messages.find(message => message.id === reply.id).content = output
         }
 
-        // Buy item using ID
+        // Buy item using ID.
         if (commandName === 'buy') {
             let input = func.sanitise(options.getString('item'))
-            let item = func.searchArray([world.items], ['id', 'prototype'], [input, false])?.[0]
+            let item = func.searchArray([world.items], ['id'], [input])[0]
 
-            // Check that purchase request is valid
+            // Check that purchase request is valid.
             if (!player) return await interaction.editReply({ embeds: [ await func.error('No player found matching your username.') ] }) 
             if (!item) return await interaction.editReply({ embeds: [ await func.error('No item found for this ID.') ] }) 
             if (item.owner) return await interaction.editReply({ embeds: [ await func.error('Item already has an owner.') ] }) 
@@ -113,13 +105,13 @@ client.on('interactionCreate', async (interaction) => {
         }
 
         // Generate an item.
-        if (commandName === 'gen-item') {
-            let input = func.sanitise(options.getString('name'))
-            let description = func.sanitise(await novelAPI.generate(novelAPI.chat, `item:sword|description:Forged in fire and honed with the wisdom of centuries, this sword is a testament to craftsmanship and strength. Its blade, sharp as the bite of winter's chill, reflects the courage of its bearer, while the hilt, wrapped in leather weathered by time, speaks of resilience and determination. With each swing, it whispers tales of battles won and legends born, a silent guardian in a world of chaos. Its hilt is engraved with a snakelike figure, perhaps a deity or monster. Many covet this item, seeking its rare, radiant power.|item:cat|description:Sleek and silent, the cat moves with a graceful poise that captivates the eye. Its fur, a symphony of hues from ebony to dusk, shimmers in the soft light. With eyes like golden orbs, it observes the world with a knowing gaze, embodying both mystery and elegance in its every step. They say cats have nine lives, but the truth is they have but one, for they never die.|item:Bill Gates|description:Distinguished and visionary, Bill Gates commands the stage with an aura of intellect and purpose. His demeanor, a blend of humility and determination, reflects a lifetime of innovation and philanthropy. Behind his eyes, windows to a mind constantly in motion, lies a wealth of knowledge and foresight that has shaped the modern world. Many have tried to emulate his success, but who can say that they have stood in his shoes?|item:${input}|description:`, 48, 86))
-            let thumbnail = await novelAPI.generateImage(`{{${input}}}, amazing quality, very aesthetic, [[black background]]`)
-            var reply = await interaction.editReply({ embeds: [await func.generateEmbed(input, description, colors.success, thumbnail, 'Prototype') ], files: [thumbnail] })
-            prototypes.items.push({ description:description, name:input, thumbnail:thumbnail })
-            messages.find(message => message.id === reply.id).content = `${input}\n${description}`
+        if (commandName === 'gen') {
+            let name = func.sanitise(options.getString('name'))
+            let object = await func.generatePrototype(name)
+            var reply = await interaction.editReply({ embeds: [await func.generateEmbed(object.name, object.description, colors.success, object.thumbnail, `Prototype ${object.type}`) ], files: [object.thumbnail] })
+            prototypes.push(object) //add object to prototypes array
+            messages.find(message => message.id === reply.id).content = `[]`
+            messages.find(message => message.id === reply.id).author = object
         }
 
         // Generate a list using the user's prompt.
@@ -130,53 +122,40 @@ client.on('interactionCreate', async (interaction) => {
             messages.find(message => message.id === reply.id).content = output
         }
 
-        // Generate an NPC.
-        if (commandName === 'gen-npc') {
-            //NPC details
-            let input = func.sanitise(options.getString('name'))
-            let thumbnail = await novelAPI.generateImage(`{{${input}}}, amazing quality, very aesthetic, portrait, [[black background]]`)
-            let details = func.sanitise(await novelAPI.generate(novelAPI.chat, `Blob Monster/A gelatinous being, the Blob Monster absorbs all misfortunate enough to wander into its path. It emits a sickening gurgling noise at all times, announcing its presence to all in earshot./unfriendly, ravenous, antagonist/'Glob blob glob, yummy yummy human flesh, glob glob.'/\nCat/A charming feline companion whose personality embodies the epitome of grace and independence. With sleek fur the color of midnight and luminous emerald eyes that seem to hold ancient secrets, it exudes an air of regal elegance. Yet beneath this dignified exterior lies a mischievous spirit, prone to playful antics and sudden bursts of affection./predatory, playful/'Purrrrr, got any catnip? How about a glass of purrrple drank?'/\nSir Ronald/Valiance personified, Sir Ronald is the bravest knight in the land, wielding a massive sword and gleaming white armour. Descended from noble blood, he has a certain uppishness about him, as if he believes himself destined for a noble fate above all others./loyal, brave, headstrong/'I fight for the king, and the king alone! Who are you to question me?'/\nObama/Former President of the United Stated, Obama spends his days giving lectures, supporting the Democratic Party, and championing his personal causes. He also loves playing basketball when he can find the time./intelligent, politically motivated/'Change will not come if we wait for some other person or some other time. We are the ones we've been waiting for.'/\nTalking Rock/While at first glance it seems like just a rock, to your surprise, you find it begins speaking in a deep, gravelly tone./hardy, steadfast, strong/'I may be just a rock, but I've got heart, buster! Look at me while I'm talking to you.'/\n${input}/`, 124, 148)).split('/')                        
-            let character = { name: input, description: details[0], personality: func.sanitise(details[1]), quote: details[2], thumbnail: thumbnail }
-            var reply = await interaction.editReply({ embeds: [await func.generateEmbed(input, `**Description**\n${character.description}\n\n**Personality**\n${character.personality}.\n\n**Quote**\n${character.quote}`, colors.success, thumbnail, 'Prototype') ], files: [thumbnail] })
-            prototypes.NPCs.push(character) // Add generated NPC to prototype array
-            messages.find(message => message.id === reply.id).content = `[generate]`
-            messages.find(message => message.id === reply.id).author = character
-        }
-
         // Display player's inventory
         if (commandName === 'inventory') {
             let inventory = func.searchArray([world.items], ['owner', 'prototype'], [player.name, false])
             let output = ''
             if (!inventory) return await interaction.editReply({ embeds: [ await func.error('No items found for this player.') ] })
-            for (var i = 0; i < inventory.length; i++) {
-                output += `- **${inventory[i].name}** / \`#${inventory[i].id}\` / ${inventory[i].rarity} / \`${inventory[i].value}ḇ\`\n`
-            }
+            for (var i = 0; i < inventory.length; i++) output += `- **${inventory[i].name}** / \`#${inventory[i].id}\` / ${inventory[i].rarity} / \`${inventory[i].value}ḇ\`\n`
             var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`Inventory`, `${output}`, colors.info, undefined)] })
             messages.find(message => message.id === reply.id).content = inventory
         }
 
         // List all players
         if (commandName === 'players') {
-            let output = ''
-            for (var i = 0; i < world.players.length; i++) output += `${func.sanitise(world.players[i].name)} / \`#${world.players[i].id}\` / \`${world.players[i].value}ḇ\`\n`
-            var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`Players`, `${output}`, colors.info, undefined)] })
+            //BROKEN
+            //let output = ''
+            //for (var i = 0; i < world.length; i++) output += `${func.sanitise(world.players[i].name)} / \`#${world.players[i].id}\` / \`${world.players[i].value}ḇ\`\n`
+            //var reply = await interaction.editReply({ embeds: [await func.generateEmbed(`Players`, `${output}`, colors.info, undefined)] })
         }
 
         // Look up object by ID
         if (commandName === 'search') {
             let input = func.sanitise(options.getString('id'))
-            let object = func.searchArray([world.items, world.players], ['id'], [input])?.[0]
+            let object = func.searchArray([world], ['id'], [input])[0]
+            console.log(object)
             var replySegments // The segments the embed will be constructed from
 
             // Send error message if no matching item
             if (!object) return await interaction.editReply({ embeds: [ await func.error('Search returned no results.') ] })
 
-            else if (object.type === 'item') {
+            else if (object.type === 'Item') {
                 replySegments = { embeds: [ await func.generateEmbed(object.name, object.description, colors.info, object.thumbnail, `#${object.id} / ${object.rarity} / ${object.value}ḇ / Owner: ${object.owner}`) ], }
                 if (object.thumbnail) replySegments.files = [ object.thumbnail ] // Add thumbnail if available
             }
 
-            else if (object.type === 'player') {
+            else if (object.type === 'Player') {
                 replySegments = { embeds: [ await func.generateEmbed(object.name, undefined, colors.info, undefined, `#${object.id} / ${object.value}ḇ`) ], }
             }
 
@@ -188,7 +167,7 @@ client.on('interactionCreate', async (interaction) => {
         // Sell item using ID
         if (commandName === 'sell') {
             let input = func.sanitise(options.getString('item'))
-            let item = func.searchArray([world.items], ['id', 'prototype'], [input, false])?.[0]
+            let item = func.searchArray([world.items], ['id'], [input])?.[0]
 
             // Check that purchase request is valid
             if (!player) return await interaction.editReply({ embeds: [ await func.error('No player found matching your username.') ] }) 
@@ -207,16 +186,25 @@ setInterval(async() => {
     try {
         // Send one-shot message
         if (random.int(0,50) === 0) {
-            await channel.send('(as Enward): ' + await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64))
+            await channel.send('(as Enward):' + await novelAPI.generate(novelAPI.chat, `Enward: How's the weather today, raining cats and dogs?\nEnward: Yesterday I saw a snail and it looked at me funny. I stared back and pulled my tongue out.\nEnward: Get in bitch we're going shopping.\nEnward: Do you think Antarctica and Switzerland are really going to war? The thought keeps me up at night.\nEnward: I don't understand jokes about deez nuts. What's so funny about nuts? Oh wait. Testicles.\nEnward: So what's the deal with airplane food? Rhetorical question.\nEnward:`, 1, 64))
+        }
+
+        // Generate object
+        else if (random.int(0,20) === 0) {
+            var type = ['NPC', 'Item', 'Location'][random.int(0,2)]
+            var object = func.generateObject(type)
+            var reply = await channel.send({ embeds: [await func.generateEmbed(`✨ New ${type} ✨`, `**${object.name}**\n${object.description}`, colors.success, object.thumbnail, `${object.type} / ${object.rarity} / ${object.value}ḇ / #${object.id}`) ], files: [object.thumbnail] })
+            messages.find(message => message.id === reply.id).content = '[]'
+            messages.find(message => message.id === reply.id).author = object
         }
 
         // Save world file
         console.log('World saved.')
-        fs.writeFileSync('./saves/save_1.mjs', `export var world = ${JSON.stringify(world)}\nexport var prototypes = ${JSON.stringify(prototypes)}\n//export var world = {"items":[],"locations":[],"NPCs":[],"players":[]}\n//export var prototypes = {"items":[],"locations":[],"NPCs":[]}`)
+        fs.writeFileSync('./saves/save_1.mjs', `export var world = ${JSON.stringify(world)}\nexport var prototypes = ${JSON.stringify(prototypes)}\n//export var world = []\n//export var prototypes = []`)
     } catch (error) { console.log('Error:' + error) }
 }, 60000)
 
-// Listen for messages and reply if valid
+// Listen for messages and reply if validd
 client.on("messageCreate", async (message) => {
     try {
         // Save message locally
@@ -229,7 +217,7 @@ client.on("messageCreate", async (message) => {
             if (message.author.bot) if (random.int(0,10) === 0) return
 
             // Add one brahcoin for each interaction
-            try { func.searchArray([world.players], ['name'], [message.author.name])[0].value++ } catch { }
+            try { func.searchArray([world], ['name'], [message.author.name])[0].value++ } catch { }
             
             // Build chat history using previous messages (if available)
             var query = messages[messages.length-1] // Start query at latest message
@@ -237,20 +225,19 @@ client.on("messageCreate", async (message) => {
             var character = defaultCharacter // Default to Enward
 
             while (query) {
-                try { if (query.content.includes('[generate]')) character = query.author, query = undefined } catch { } // Try to make generated thing the character                 
+                try { if (query.content.includes('[]')) character = query.author; } catch { } // Try to make generated thing the character                 
                 try { prompt.unshift(func.sanitise(query.author.name) + ': ' + func.sanitise(query.content)) } catch { } // Add message content to prompt
-                try { query = messages.find(function(messages) { return messages.id === query.parent.messageId }) } catch { break } // Try to find next message in thread, otherwise break
+                try { query = messages.find(function(messages) { return messages.id === query.parent.messageId }) } catch { query = undefined } // Try to find next message in thread, otherwise break
             }
 
             prompt = prompt.join('\n')
             prompt = prompt.replace(/Enward/g, character.name)
             prompt = func.sanitise(prompt)
-            prompt = `[Name: ${character.name}.]\n[Quote: ${character.quote}]\n[Description: ${character.description}.]\n[Personality: ${func.sanitise(character.personality)}.]\n----\n[Style: chat.]\n----\n${prompt}\n${character.name}:` // Add personality and style, then prime Enward's response
+            prompt = `[Description of ${character.name}: ${character.description}]\n[Personality of ${character.name}: ${func.sanitise(character.traits)}.]\n----\n[Style: chat.]\n----\n${prompt}\n${character.name}:` // Add personality and style, then prime Enward's response
             var response = func.sanitise(await novelAPI.generate(novelAPI.chat, prompt, 1, random.int(1,64)))
-            response.author = character
 
             // Reply
             func.reply(message, `(as ${character.name}): ${response}`)
         } 
     } catch (error) { console.error('Error:', error) }
-})hju
+})

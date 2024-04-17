@@ -4,9 +4,10 @@ import * as cfg from "./config.mjs"
 import { channel } from "./index.mjs"
 import { EmbedBuilder } from "discord.js"
 import { setTimeout } from "timers/promises"
-import { world } from "./saves/save_1.mjs"
-import random from 'random'
+import { world, prototypes } from "./saves/save_1.mjs"
 import path from 'path'
+import random from 'random'
+import weighted from 'weighted'
 
 /* EXPORTS */
 // Generate an error message embed
@@ -29,7 +30,7 @@ export async function generateEmbed(title, description, colour, thumbnail, foote
     }
 }
 
-// Generate an unused ID
+// Generate an unused ID.
 export function generateId() {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     let id
@@ -42,7 +43,7 @@ export function generateId() {
     } while (exists) return id
 }
 
-// Generate a list of comma-separated items
+// Generate a list of comma-separated items.
 export async function generateList(prompt, num) {
     let list
     let generated
@@ -56,12 +57,54 @@ export async function generateList(prompt, num) {
         } else list = ""
     }
 
-    // Convert to array, remove last item, shuffle list, remove any additional items
+    // Convert to array, remove last item, shuffle list, remove any additional items.
     list = list.split(',')
     list.pop()
     list = shuffle(list)
     list = list.slice(0, num)
     if (num === 1) return list.toString(); else return list
+}
+
+// Generate an object using an existing prototype.
+export function generateObject(type) {
+    var searchResults = searchArray([prototypes], ['type'], [type]) // Get a list of all prototypes matching the desired type.
+        if (!searchResults) return
+        console.log(searchResults)
+    var object = Object.assign(searchResults[random.int(0, searchResults.length-1)]) // Clone the prototype into a new object.
+        object.id = generateId()
+        object.rarity = weighted.select({ '☆': 0.8, '☆☆': 0.4, '☆☆☆': 0.2, '☆☆☆☆': 0.1, '☆☆☆☆☆': 0.05 })
+            if (object.type === 'Item') object.value = object.rarity.length * random.int(1,50)
+            else if (object.type === 'NPC') object.value = object.rarity.length * random.int(50,100)
+            else if (object.type === 'Location') object.value = object.rarity.length * random.int(100,200)
+        world.push(object)
+    return object
+}
+
+// Generate a prototypical object.
+export async function generatePrototype(name) {
+    let properties = sanitise(await novelAPI.generate(novelAPI.generator,`
+##This is a generator that strictly follows the specification.
+##[Specification]
+##Type MUST ONLY BE 'NPC', 'location', or 'item'. Items are objects like food or weapons, locations are physical spaces like a field, and NPCs are living things.
+##Rarity is a value from 1 to 10, where 1 is something very common, and 10 is something very special and one-of-a-kind.
+##[Generator]
+##ID|Name|Type|Description|Rarity|Traits
+##====|====|====|====|====
+01|Sad Sam|NPC|A man with a sorrowful demeanour. Why is he so sad? Maybe he needs a hug.|Sad, depressed, morose
+02|Donut|Item|A delicious pink donut that demands to be eaten. Looks kind of like the one from the Simpsons.|Tasty, fun, colourful
+03|Epic Flamesword|Item|A flaming hot sword that gleams with fury.|scathing, hot, epic
+04|Barack Obama|NPC|The former president of the United States. Now in retirement, he lives a quiet but dignified life.|Intelligent, disarming, diplomatic
+05|Grenade|Item|An explosive thrown device that will destroy almost anything. Kaboom!|Explosive
+06|The Leaning Tower of Pisa|Location|A tower with a terrifying lean, threatening to fall over at any moment.|Fragile, old
+07|Village|location|Just your average, peaceful vilage. Sometimes things happen here, but more often than note, they don't.|Bustling
+08|Guy Down the Street|NPC|He's a guy down the street, everyone knows him. Sometimes he waves and people wave back.|Distant, neighbourly
+09|Gunblade|Item|Simultaneously a blade and a gun, you don't want either side pointed at you. Users beware, it's all too easy to stab yourself while shooting.|Multifaceted, deadly
+10|The Starry Night painting by Vincent Van Gogh|Item|A masterpiece painted by a master painter.|Classic, inventive
+11|${name}|`, 100, 150)).match(/^[^\n]*/)[0].split('|')
+    let thumbnail = await novelAPI.generateImage(`{{${name}}}, amazing quality, very aesthetic, [[black background]]`)
+    let object = { description:properties[1], name:name, thumbnail:thumbnail, traits:properties[3], type:properties[0] }
+    prototypes.push(object)
+    return object
 }
 
 // Get user's nickname, or failing that, their username
@@ -82,13 +125,13 @@ export async function reply(message, response) {
 
 // Search for object using ID
 export function searchArray(arrays, propertiesArray, valuesArray) {
-    var matches = arrays.filter(array => {
-        return array.some(item => {
+    var matches = arrays.flatMap(array => {
+        return array.filter(item => {
             return propertiesArray.every((props, index) => {
                 return item.hasOwnProperty(props) && item[props] === valuesArray[index]
             })
         })
-    })
+    });
     return matches.length > 0 ? matches : null;
 }
 

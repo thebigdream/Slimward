@@ -49,12 +49,12 @@ export const commands = [
             required: true, } ]
     },
     {
-        name: 'gen-npc',
-        description: 'Generate an NPC using a text prompt.',
+        name: 'gen',
+        description: 'Generate a thing using a text prompt.',
         type: 1,
         options: [ {
             name: "name",
-            description: "The NPC's name.",
+            description: "The name.",
             type: 3,
             required: true, } ]
     },
@@ -65,16 +65,6 @@ export const commands = [
         options: [ {
             name: "prompt",
             description: "Initial prompt.",
-            type: 3,
-            required: true, } ]
-    },
-    {
-        name: 'gen-item',
-        description: 'Generate an item.',
-        type: 1,
-        options: [ {
-            name: "name",
-            description: "What your item is called.",
             type: 3,
             required: true, } ]
     },

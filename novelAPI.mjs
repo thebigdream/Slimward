@@ -55,6 +55,27 @@ export const list = {
     }
 }
 
+export const generator = {
+    model: 'kayra-v1',
+    parameters: {
+        "ban_brackets": true,
+        "use_string": true,
+        "repetition_penalty": 3.75,
+        "repetition_penalty_frequency": 0,
+        "repetition_penalty_presence": 0,
+        "repetition_penalty_range": 8000,
+        "repetition_penalty_slope": 0.09,
+        "temperature": 0.8,
+        "top_k": 100,
+        "top_p": 10,
+        "tail_free_sampling": 1,
+        "generate_until_sentence": true,
+        "bad_words_ids": [
+            //[85], // newline
+        ],
+  }
+}
+
 // Array of tokens that should ALWAYS be banned because they degrade output quality.
 const defaultBannedTokens = [
     [23], //***
@@ -71,7 +92,7 @@ const defaultBannedTokens = [
     //[900], //).
     //[1165], // '
     [1214], //:
-    [1139], // |
+    //[1139], // |
     [1431], // [
     [1538], //!"
     [1821], // *
@@ -97,6 +118,7 @@ const defaultBannedTokens = [
     [15614], //Author
     [16889], //-|
     [20680], //._
+    [20765], //[]
     [20866], //---|
     [20932], // ..
     [21099], //...|
@@ -116,7 +138,7 @@ const defaultBannedTokens = [
     [49352], //]
     [49356], //[
     //[49360], //;
-    [49376], //|
+    //[49376], //|
     [49399], //*
     [49405], //>
     [49438], //<
